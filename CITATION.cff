@@ -1,0 +1,56 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it and the underlying tools as below."
+title: "Faryabi Spot Calling"
+version: "3.0"
+date-released: 2026-04-02
+url: "https://github.com/tubcraft/Faryabi_Spotcaller"
+
+references:
+  - type: article
+    title: "Piscis: A loss estimator of the F1 score enables accurate spot detection in fluorescence microscopy images via deep learning"
+    authors:
+      - family-names: Niu
+        given-names: Zijian
+      - family-names: O'Farrell
+        given-names: Aoife
+      - family-names: Li
+        given-names: Jingxin
+      - family-names: Reffsin
+        given-names: Sam
+      - family-names: Jain
+        given-names: Naveen
+      - family-names: Dardani
+        given-names: Ian
+      - family-names: Goyal
+        given-names: Yogesh
+      - family-names: Raj
+        given-names: Arjun
+    journal: "Cell Systems"
+    year: 2025
+    doi: 10.1016/j.cels.2025.101448
+
+  - type: article
+    title: "Cellpose: a generalist algorithm for cellular segmentation"
+    authors:
+      - family-names: Stringer
+        given-names: Carsen
+      - family-names: Wang
+        given-names: Tim
+      - family-names: Michaelos
+        given-names: Michalis
+      - family-names: Pachitariu
+        given-names: Marius
+    journal: "Nature Methods"
+    year: 2021
+    doi: 10.1038/s41592-020-01018-x
+
+  - type: article
+    title: "Cellpose 2.0: how to train your own model"
+    authors:
+      - family-names: Pachitariu
+        given-names: Marius
+      - family-names: Stringer
+        given-names: Carsen
+    journal: "Nature Methods"
+    year: 2022
+    doi: 10.1038/s41592-022-01663-4
