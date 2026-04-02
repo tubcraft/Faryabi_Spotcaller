@@ -1,0 +1,101 @@
+# =====================
+# Python
+# =====================
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+develop-eggs/
+.installed.cfg
+lib/
+lib64/
+
+# =====================
+# Virtual Environments
+# =====================
+.env
+.venv
+env/
+venv/
+ENV/
+
+# =====================
+# Jupyter Notebooks
+# =====================
+.ipynb_checkpoints/
+*.ipynb
+
+# =====================
+# JAX / XLA Cache
+# =====================
+jax_cache/
+.jax_cache/
+__jax_cache__/
+*.xla_cache
+
+# =====================
+# Model Weights (large binary files)
+# =====================
+Cellpose_models/
+Piscis_models/
+*.pth
+*.pt
+*.h5
+*.pkl
+*.npy
+*.npz
+
+# =====================
+# Data Files
+# =====================
+*.tif
+*.tiff
+*.png
+*.jpg
+*.jpeg
+*.csv
+*.zarr
+data/
+results/
+output/
+
+# =====================
+# Conda
+# =====================
+*.conda
+*.tar.bz2
+
+# =====================
+# macOS
+# =====================
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# =====================
+# IDE & Editors
+# =====================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# =====================
+# Logs & Temp
+# =====================
+*.log
+*.tmp
+tmp/
+logs/
