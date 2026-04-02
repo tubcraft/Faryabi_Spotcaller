@@ -1,0 +1,35 @@
+name: piscis_env_v3
+
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  - python=3.10
+  - numpy
+  - scipy
+  - pandas
+  - matplotlib
+  - tifffile
+  - imageio
+  - pillow
+  - scikit-image
+
+  - pip
+  - pip:
+      # JAX CPU placeholder — replaced by CUDA version in install_gpu.sh
+      - jax==0.6.0
+
+      # Piscis and its deps
+      - piscis
+      - flax
+
+      # Cellpose v3 (pin required — your model is CP3-trained)
+      - cellpose<4
+
+      # GUI + file support
+      - flask
+      - nd2
+
+      # SpotCaller GPU
+      - cupy-cuda12x

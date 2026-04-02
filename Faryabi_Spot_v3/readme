@@ -1,0 +1,7 @@
+# Create and activate
+conda env create -f environment_piscis_v3.yml
+conda activate piscis_env_v3
+
+# Run the gui
+python app.py --host 0.0.0.0 --port 5000 --username username --password your_pw
+
