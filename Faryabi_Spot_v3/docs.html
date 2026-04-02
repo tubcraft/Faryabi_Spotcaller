@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Faryabi Spot Calling — Documentation</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Syne:wght@400;700;800&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,400&display=swap');
+
+:root {
+  color-scheme: dark light;
+}
+
+:root[data-theme="light"] {
+  --bg:      #f0f2f5;
+  --surface: #ffffff;
+  --panel:   #f7f8fa;
+  --border:  #dde1e8;
+  --border2: #c8cdd8;
+  --text:    #1a2030;
+  --muted:   #6b7897;
+  --dim:     #a0aabf;
+  --accent:  #0077cc;
+  --green:   #16a34a;
+  --amber:   #d97706;
+  --red:     #dc2626;
+  --cy3:     #c94f1a;
+  --cy5:     #7c3aed;
+  --dapi:    #1d4ed8;
+}
+
+:root, :root[data-theme="dark"] {
+  --bg: #07090c; --surface: #0d1018; --panel: #111520;
+  --border: #1a2030; --border2: #222c40;
+  --text: #c8d4e8; --muted: #4a5878; --dim: #2a3550;
+  --accent: #00e5ff; --green: #22c55e; --amber: #f59e0b;
+  --red: #ef4444; --cy3: #ff6b35; --cy5: #a855f7; --dapi: #3b82f6;
+  --serif: 'Source Serif 4', serif;
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'Syne', sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: var(--serif); font-size: 16px; line-height: 1.75; }
+
+/* Layout */
+.layout { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+
+/* Sidebar nav */
+nav {
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  background: var(--surface); border-right: 1px solid var(--border);
+  padding: 28px 0; scrollbar-width: thin; scrollbar-color: var(--border2) transparent;
+}
+.nav-logo { padding: 0 20px 24px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+.nav-logo h1 { font-family: var(--sans); font-size: 18px; font-weight: 800; letter-spacing: .1em; color: var(--accent); text-transform: uppercase; }
+.nav-logo p  { font-size: 11px; color: var(--muted); font-family: var(--mono); margin-top: 3px; }
+.nav-section { font-size: 9px; font-weight: 600; letter-spacing: .18em; color: var(--muted); text-transform: uppercase; padding: 12px 20px 4px; }
+nav a { display: block; padding: 5px 20px; font-size: 13px; font-family: var(--mono); color: var(--muted); text-decoration: none; transition: all .15s; border-left: 2px solid transparent; }
+nav a:hover { color: var(--text); background: rgba(0,229,255,.04); }
+nav a.active { color: var(--accent); border-left-color: var(--accent); background: rgba(0,229,255,.05); }
+
+/* Main content */
+main { max-width: 820px; padding: 60px 64px; }
+.hero { margin-bottom: 56px; padding-bottom: 40px; border-bottom: 1px solid var(--border); }
+.hero h1 { font-family: var(--sans); font-size: 40px; font-weight: 800; letter-spacing: -.01em; color: var(--accent); line-height: 1.1; margin-bottom: 16px; }
+.hero p { font-size: 18px; color: var(--muted); font-family: var(--mono); line-height: 1.6; }
+
+/* Sections */
+section { margin-bottom: 56px; scroll-margin-top: 24px; }
+h2 { font-family: var(--sans); font-size: 24px; font-weight: 700; color: var(--text); margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+h3 { font-family: var(--sans); font-size: 17px; font-weight: 700; color: var(--text); margin: 28px 0 12px; }
+h4 { font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--accent); margin: 20px 0 8px; text-transform: uppercase; letter-spacing: .08em; }
+p  { margin-bottom: 14px; }
+p:last-child { margin-bottom: 0; }
+strong { color: var(--text); font-weight: 600; }
+em { font-style: italic; color: var(--muted); }
+
+/* Code */
+code { font-family: var(--mono); font-size: 13px; background: var(--panel); border: 1px solid var(--border2); border-radius: 3px; padding: 1px 6px; color: var(--accent); }
+pre { background: var(--panel); border: 1px solid var(--border2); border-radius: 6px; padding: 20px 24px; overflow-x: auto; margin: 16px 0; font-family: var(--mono); font-size: 12.5px; line-height: 1.7; scrollbar-width: thin; }
+pre code { background: none; border: none; padding: 0; color: var(--text); }
+.comment { color: var(--muted); }
+.kw  { color: var(--cy5); }
+.str { color: var(--green); }
+.num { color: var(--amber); }
+.flag { color: var(--cy3); }
+
+/* Tables */
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13.5px; }
+th { font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); padding: 8px 14px; border-bottom: 2px solid var(--border); text-align: left; }
+td { padding: 9px 14px; border-bottom: 1px solid var(--border); vertical-align: top; font-family: var(--mono); font-size: 12.5px; }
+td:first-child { color: var(--accent); white-space: nowrap; }
+tr:hover td { background: rgba(255,255,255,.02); }
+
+/* Callouts */
+.callout { border-radius: 6px; padding: 14px 18px; margin: 18px 0; border-left: 3px solid; font-size: 14px; }
+.callout.tip  { background: rgba(0,229,255,.05); border-color: var(--accent); }
+.callout.warn { background: rgba(245,158,11,.05); border-color: var(--amber); }
+.callout.note { background: rgba(34,197,94,.05); border-color: var(--green); }
+.callout-title { font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; margin-bottom: 6px; }
+.callout.tip  .callout-title { color: var(--accent); }
+.callout.warn .callout-title { color: var(--amber); }
+.callout.note .callout-title { color: var(--green); }
+
+/* Comparison table */
+.compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+.compare-card { background: var(--panel); border: 1px solid var(--border2); border-radius: 6px; padding: 18px; }
+.compare-card h4 { margin-top: 0; margin-bottom: 10px; }
+.compare-card.piscis h4 { color: var(--cy3); }
+.compare-card.spot-caller h4 { color: var(--cy5); }
+.compare-card ul { list-style: none; font-size: 13px; line-height: 1.8; }
+.compare-card ul li::before { content: "→ "; color: var(--muted); }
+
+/* Pipeline diagram */
+.pipeline { display: flex; align-items: center; gap: 0; margin: 24px 0; flex-wrap: wrap; gap: 4px; }
+.pipe-step { background: var(--panel); border: 1px solid var(--border2); border-radius: 4px; padding: 8px 14px; font-family: var(--mono); font-size: 12px; }
+.pipe-step.input  { border-color: var(--accent);  color: var(--accent); }
+.pipe-step.detect { border-color: var(--cy3);      color: var(--cy3); }
+.pipe-step.seg    { border-color: var(--dapi);      color: var(--dapi); }
+.pipe-step.out    { border-color: var(--green);     color: var(--green); }
+.pipe-arrow { color: var(--muted); font-size: 18px; padding: 0 2px; }
+
+/* output file list */
+.output-list { list-style: none; margin: 12px 0; }
+.output-list li { padding: 8px 0; border-bottom: 1px solid var(--border); display: flex; gap: 12px; align-items: flex-start; font-size: 13.5px; }
+.output-list li:last-child { border: none; }
+.output-list .filename { font-family: var(--mono); color: var(--accent); white-space: nowrap; flex-shrink: 0; }
+.output-list .desc { color: var(--muted); font-size: 13px; }
+
+/* toc highlight on scroll */
+
+/* Smooth theme transition */
+*, *::before, *::after {
+  transition: background-color .2s ease, border-color .2s ease, color .15s ease;
+}
+/* But not for transforms/opacity/visibility (prevents animation jank) */
+#canvas-wrap, canvas, input[type=range] {
+  transition: none !important;
+}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<nav id="sidebar">
+  <div class="nav-logo">
+    <h1>Faryabi Spot Calling</h1>
+    <p>spot calling suite</p>
+  </div>
+  <div class="nav-section">Getting Started</div>
+  <a href="#overview">Overview</a>
+  <a href="#install">Installation</a>
+  <a href="#quickstart">Quick Start</a>
+  <div class="nav-section">Pipeline</div>
+  <a href="#input">Input Files</a>
+  <a href="#detectors">Detectors</a>
+  <a href="#cellpose">Cellpose</a>
+  <a href="#parallelization">Parallelization</a>
+  <a href="#outputs">Outputs</a>
+  <div class="nav-section">Reference</div>
+  <a href="#flags">All Flags</a>
+  <a href="#tuning">Tuning Guide</a>
+  <a href="#viewer">Spot Viewer</a>
+  <a href="#gui">Web GUI</a>
+  <div class="nav-section">Advanced</div>
+  <a href="#api">Python API</a>
+  <a href="#comparison">Detector Comparison</a>
+  <a href="#faq">FAQ</a>
+</nav>
+
+<main>
+
+<div class="hero">
+  <h1>Faryabi Spot Calling</h1>
+  <p>smFISH spot detection · cell segmentation · interactive viewer</p>
+</div>
+
+<!-- ── Overview ── -->
+<section id="overview">
+  <h2>Overview</h2>
+  <p>The Piscis pipeline is a complete end-to-end workflow for single-molecule fluorescence in-situ hybridisation (smFISH) data analysis. It combines two spot detectors, Cellpose cell segmentation, an interactive HTML viewer, and a web-based GUI — all designed to work together from raw TIF stacks to per-cell spot counts.</p>
+
+  <div class="pipeline">
+    <div class="pipe-step input">TIF stacks</div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step detect">z-projection</div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step detect">spot detection</div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step seg">cell segmentation</div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step out">CSVs + previews</div>
+  </div>
+
+  <h3>Files</h3>
+  <table>
+    <tr><th>File</th><th>Purpose</th></tr>
+    <tr><td>run_piscis.py</td><td>Main pipeline — spot detection + cell segmentation</td></tr>
+    <tr><td>spot_caller.py</td><td>Classical adaptive spot detector (SpotCaller)</td></tr>
+    <tr><td>app.py</td><td>Flask web GUI backend</td></tr>
+    <tr><td>templates/index.html</td><td>GUI frontend</td></tr>
+    <tr><td>spot_viewer.html</td><td>Interactive spot viewer (open directly in browser)</td></tr>
+    <tr><td>docs.html</td><td>This documentation</td></tr>
+  </table>
+</section>
+
+<!-- ── Install ── -->
+<section id="install">
+  <h2>Installation</h2>
+  <h3>Conda environment (recommended)</h3>
+  <pre><code><span class="comment"># Create and activate</span>
+conda env create -f environment_piscis.yml
+conda activate piscis_env
+
+<span class="comment"># Verify</span>
+python -c <span class="str">"import piscis, cellpose; print('OK')"</span></code></pre>
+
+  <h3>Manual install</h3>
+  <pre><code>pip install piscis
+pip install <span class="str">"cellpose&lt;4"</span>          <span class="comment"># pin to v3 for CP3-trained models</span>
+pip install flask tifffile scipy pillow numpy pandas scikit-image</code></pre>
+
+  <div class="callout warn">
+    <div class="callout-title">⚠ Cellpose version</div>
+    If your Cellpose model was trained with Cellpose 3 (most custom models are), you must install <code>cellpose&lt;4</code>. Cellpose 4 changed the model format and is incompatible with CP3 weights.
+  </div>
+
+  <h3>GPU support</h3>
+  <p>Piscis uses JAX. To use a GPU replace <code>jax[cpu]</code> with the appropriate CUDA backend:</p>
+  <pre><code>pip install <span class="str">"jax[cuda12]"</span>     <span class="comment"># CUDA 12</span>
+pip install <span class="str">"jax[cuda11]"</span>     <span class="comment"># CUDA 11</span></code></pre>
+  <p>SpotCaller uses only NumPy/SciPy and runs on CPU only. For large datasets it still benefits from <code>--workers</code> parallelization.</p>
+</section>
+
+<!-- ── Quickstart ── -->
+<section id="quickstart">
+  <h2>Quick Start</h2>
+  <h3>Command line</h3>
+  <pre><code><span class="comment"># Piscis spot detection + Cellpose segmentation</span>
+python run_piscis.py \
+  <span class="flag">--input_dir</span>      /data/experiment \
+  <span class="flag">--output_dir</span>     /results/run1 \
+  <span class="flag">--detector</span>       piscis \
+  <span class="flag">--model</span>          /models/piscis_smfish \
+  <span class="flag">--cellpose_model</span> /models/cellpose_cd4 \
+  <span class="flag">--workers</span>        8 \
+  <span class="flag">--save_previews</span>
+
+<span class="comment"># SpotCaller (no model needed)</span>
+python run_piscis.py \
+  <span class="flag">--input_dir</span>  /data/experiment \
+  <span class="flag">--output_dir</span> /results/run2 \
+  <span class="flag">--detector</span>   spot_caller \
+  <span class="flag">--spot_yx</span>    3.0 \
+  <span class="flag">--threshold</span>  5.0 \
+  <span class="flag">--workers</span>    16 \
+  <span class="flag">--save_previews</span></code></pre>
+
+  <h3>Web GUI</h3>
+  <pre><code>python app.py <span class="flag">--host</span> 0.0.0.0 <span class="flag">--port</span> 5000
+<span class="comment"># Open http://&lt;server&gt;:5000 in your browser</span></code></pre>
+
+  <h3>Spot viewer</h3>
+  <p>Open <code>spot_viewer.html</code> directly in any modern browser. Drop your entire output folder onto the <strong>📂 folder drop zone</strong> — images, CSVs, and masks load automatically.</p>
+</section>
+
+<!-- ── Input ── -->
+<section id="input">
+  <h2>Input Files</h2>
+  <h3>Naming convention</h3>
+  <p>Files must contain a channel keyword in their filename. The keyword is case-insensitive and can appear anywhere in the name:</p>
+  <table>
+    <tr><th>Keyword</th><th>Channel</th><th>Processing</th></tr>
+    <tr><td>Cy3</td><td>RNA channel 1</td><td>Spot detection</td></tr>
+    <tr><td>Cy5</td><td>RNA channel 2</td><td>Spot detection</td></tr>
+    <tr><td>DAPI</td><td>Nuclei</td><td>Cell segmentation only</td></tr>
+  </table>
+
+  <h3>FOV grouping</h3>
+  <p>Files are automatically grouped by position/FOV key. The channel keyword is stripped from the filename and the remainder becomes the FOV identifier:</p>
+  <pre><code>Location_Cy3_xy001.tif   →  FOV: location_xy001  channel: Cy3
+Location_Cy5_xy001.tif   →  FOV: location_xy001  channel: Cy5
+Location_DAPI_xy001.tif  →  FOV: location_xy001  channel: DAPI</code></pre>
+
+  <h3>Supported formats</h3>
+  <p>Multi-page TIF stacks (z-stacks). Tested with 16-bit grayscale single-channel stacks. Multi-channel TIFs are supported — the first channel is used.</p>
+
+  <h3>Skipped files</h3>
+  <p>The following files are silently skipped:</p>
+  <table>
+    <tr><th>Pattern</th><th>Example</th><th>Reason</th></tr>
+    <tr><td>.*</td><td>.DS_Store, ._meta.tif</td><td>Hidden / macOS metadata</td></tr>
+    <tr><td>~$*</td><td>~$Location_Cy3.tif</td><td>Office/Windows temp files</td></tr>
+    <tr><td>__*</td><td>__MACOSX/</td><td>macOS zip artefacts</td></tr>
+    <tr><td>Non-ASCII</td><td>files with é, ü, etc.</td><td>Encoding artefacts</td></tr>
+  </table>
+
+  <div class="callout tip">
+    <div class="callout-title">💡 Tip</div>
+    Use <code>--pattern "*.tiff"</code> if your files use the four-letter extension instead of <code>.tif</code>.
+  </div>
+</section>
+
+<!-- ── Detectors ── -->
+<section id="detectors">
+  <h2>Spot Detectors</h2>
+  <div class="compare-grid">
+    <div class="compare-card piscis">
+      <h4>🧠 Piscis</h4>
+      <ul>
+        <li>Deep-learning (JAX)</li>
+        <li>Fast on GPU</li>
+        <li>Requires trained model</li>
+        <li>Best for in-distribution data</li>
+        <li>Integer coordinates</li>
+        <li>Probability threshold (0–1)</li>
+      </ul>
+    </div>
+    <div class="compare-card spot-caller">
+      <h4>🔬 SpotCaller</h4>
+      <ul>
+        <li>Classical LoG + Gaussian fit</li>
+        <li>No model needed</li>
+        <li>Adaptive per-tile noise</li>
+        <li>Sub-pixel localisation</li>
+        <li>Per-spot SNR, sigma, amplitude</li>
+        <li>MAD threshold (robust units)</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>SpotCaller algorithm</h3>
+  <p>SpotCaller implements a four-stage detection pipeline:</p>
+  <ol style="padding-left:20px;line-height:2">
+    <li><strong>Background subtraction</strong> — Morphological opening with a disk kernel sized 3× your spot radius removes uneven illumination and autofluorescence gradients.</li>
+    <li><strong>LoG bandpass filter</strong> — Laplacian of Gaussian matched to the expected PSF (<code>σ = spot_yx / √2</code>) suppresses noise and amplifies blobs of the right size.</li>
+    <li><strong>Adaptive MAD threshold</strong> — The image is tiled into <code>tile_size × tile_size</code> blocks. In each tile the threshold is <code>median + k × MAD</code>. Tiles are bilinearly interpolated to a smooth full-image map. This means bright and dim regions get appropriate thresholds — a key advantage over global thresholding.</li>
+    <li><strong>Sub-pixel Gaussian fitting</strong> — Each candidate peak is fit with a 2-D asymmetric Gaussian + background using <code>scipy.optimize.curve_fit</code>. This gives sub-pixel (y_sub, x_sub) coordinates, fitted sigma_y/sigma_x, amplitude, and SNR. Spots that fail the quality filters (SNR, sigma bounds) are discarded.</li>
+  </ol>
+
+  <div class="callout note">
+    <div class="callout-title">✓ When to use SpotCaller</div>
+    Use SpotCaller when you have no trained Piscis model, when imaging conditions differ substantially from the training data, or when you need sub-pixel localisation accuracy and per-spot quality metrics for downstream analysis (e.g. colocalization, intensity measurements).
+  </div>
+</section>
+
+<!-- ── Cellpose ── -->
+<section id="cellpose">
+  <h2>Cell Segmentation (Cellpose)</h2>
+  <p>When <code>--cellpose_model</code> is provided, the DAPI channel is used for cell segmentation. The pipeline always uses <strong>max intensity projection</strong> of the DAPI z-stack regardless of <code>--projection</code>, because max-projection gives the most complete nuclear signal for segmentation.</p>
+
+  <h3>Spot-to-cell assignment</h3>
+  <p>For each detected spot, the pipeline reads the Cellpose label mask at the spot's pixel coordinate. The cell ID at that coordinate is recorded. Spots that fall on background (label = 0) are counted as unassigned.</p>
+
+  <h3>Output</h3>
+  <p>Each FOV produces a <code>*_cells.csv</code> with one row per cell. Cells with 0 spots in every channel are still included — this is important for computing true negative rates.</p>
+
+  <div class="callout warn">
+    <div class="callout-title">⚠ Cellpose version</div>
+    Custom models trained with Cellpose 3 (most lab-trained models) require <code>cellpose&lt;4</code>. Install with <code>pip install "cellpose&lt;4"</code>.
+  </div>
+</section>
+
+<!-- ── Parallelization ── -->
+<section id="parallelization">
+  <h2>Parallelization</h2>
+  <p>The pipeline uses Python's <code>ThreadPoolExecutor</code> to process up to <code>--workers</code> FOVs concurrently (max 20). Each worker is an independent thread that handles one FOV from disk read through CSV write.</p>
+
+  <h3>Thread safety</h3>
+  <table>
+    <tr><th>Component</th><th>Thread safety</th><th>Notes</th></tr>
+    <tr><td>SpotCaller</td><td>✅ Fully thread-safe</td><td>Pure NumPy/SciPy, no shared state</td></tr>
+    <tr><td>Piscis (JAX)</td><td>⚠ Inference lock</td><td>JAX is not fork-safe; a threading.Lock wraps model.predict() calls. I/O and preprocessing still parallelise.</td></tr>
+    <tr><td>Cellpose</td><td>⚠ One instance</td><td>Single Cellpose instance shared; each DAPI image processed sequentially in its FOV thread</td></tr>
+    <tr><td>CSV writes</td><td>✅ No conflicts</td><td>Each FOV writes to its own files. Summary CSV uses a threading.Lock</td></tr>
+  </table>
+
+  <h3>Recommended settings</h3>
+  <table>
+    <tr><th>Scenario</th><th>Workers</th></tr>
+    <tr><td>SpotCaller only, 32-core server</td><td>16–20</td></tr>
+    <tr><td>Piscis on GPU</td><td>4–8 (I/O overlap, GPU stays busy)</td></tr>
+    <tr><td>Piscis on CPU</td><td>2–4 (JAX inference serialised)</td></tr>
+    <tr><td>Piscis + Cellpose</td><td>4–8 (both share threads)</td></tr>
+  </table>
+</section>
+
+<!-- ── Outputs ── -->
+<section id="outputs">
+  <h2>Outputs</h2>
+  <ul class="output-list">
+    <li>
+      <span class="filename">&lt;stem&gt;_spots.csv</span>
+      <span class="desc">One row per detected spot. Piscis: fov, channel, y, x. SpotCaller additionally: y_sub, x_sub, z_plane, snr, sigma_y, sigma_x, fit_residual, amplitude.</span>
+    </li>
+    <li>
+      <span class="filename">&lt;stem&gt;_cells.csv</span>
+      <span class="desc">Per-cell spot counts. Columns: fov, cell_id, Cy3_spots, Cy5_spots. Cells with 0 spots are always included.</span>
+    </li>
+    <li>
+      <span class="filename">spot_counts.csv</span>
+      <span class="desc">Per-FOV summary. Columns: fov, channel, n_spots, n_cells, tif_file.</span>
+    </li>
+    <li>
+      <span class="filename">cell_summary.csv</span>
+      <span class="desc">Aggregate per-FOV and per-channel statistics: n_cells, total_spots.</span>
+    </li>
+    <li>
+      <span class="filename">run_YYYYMMDD_HHMMSS.log</span>
+      <span class="desc">Full timestamped log of the run. Includes DEBUG messages, thread names, and full tracebacks on failure. One log file per run.</span>
+    </li>
+    <li>
+      <span class="filename">previews/&lt;stem&gt;.png</span>
+      <span class="desc">8-bit contrast-stretched image preview (--save_previews). Used by the HTML viewer.</span>
+    </li>
+    <li>
+      <span class="filename">previews/&lt;stem&gt;_mask.png</span>
+      <span class="desc">Coloured cell boundary overlay PNG (--save_previews). Loaded automatically by the viewer.</span>
+    </li>
+    <li>
+      <span class="filename">&lt;stem&gt;_mask.npy</span>
+      <span class="desc">Raw Cellpose integer label mask as a NumPy array for downstream use.</span>
+    </li>
+  </ul>
+
+  <h3>Spots CSV columns (SpotCaller)</h3>
+  <table>
+    <tr><th>Column</th><th>Description</th></tr>
+    <tr><td>y, x</td><td>Integer pixel coordinate of the NMS peak</td></tr>
+    <tr><td>y_sub, x_sub</td><td>Sub-pixel centroid from 2-D Gaussian fit</td></tr>
+    <tr><td>z_plane</td><td>Best z-plane index (0-indexed)</td></tr>
+    <tr><td>snr</td><td>Amplitude / local noise (MAD of patch edge pixels)</td></tr>
+    <tr><td>sigma_y, sigma_x</td><td>Fitted Gaussian width in pixels</td></tr>
+    <tr><td>fit_residual</td><td>Background offset from Gaussian fit</td></tr>
+    <tr><td>amplitude</td><td>Fitted peak amplitude above background</td></tr>
+  </table>
+</section>
+
+<!-- ── Flags ── -->
+<section id="flags">
+  <h2>All Flags</h2>
+  <h3>Input / Output</h3>
+  <table>
+    <tr><th>Flag</th><th>Default</th><th>Description</th></tr>
+    <tr><td>--input_dir</td><td>required</td><td>Folder containing TIF stacks</td></tr>
+    <tr><td>--output_dir</td><td>required</td><td>Output destination (created if absent)</td></tr>
+    <tr><td>--pattern</td><td>*.tif</td><td>Glob pattern for TIF files</td></tr>
+  </table>
+  <h3>Detector</h3>
+  <table>
+    <tr><th>Flag</th><th>Default</th><th>Description</th></tr>
+    <tr><td>--detector</td><td>piscis</td><td>piscis or spot_caller</td></tr>
+  </table>
+  <h3>Faryabi Spot Calling</h3>
+  <table>
+    <tr><th>Flag</th><th>Default</th><th>Description</th></tr>
+    <tr><td>--model</td><td>20230905</td><td>Model name or local path</td></tr>
+    <tr><td>--threshold</td><td>0.5</td><td>Detection probability 0–1. Lower = more spots.</td></tr>
+    <tr><td>--pvalue</td><td>—</td><td>Alias for --threshold</td></tr>
+  </table>
+  <h3>SpotCaller</h3>
+  <table>
+    <tr><th>Flag</th><th>Default</th><th>Description</th></tr>
+    <tr><td>--threshold</td><td>5.0</td><td>MAD multiplier above local noise. Lower = more spots.</td></tr>
+    <tr><td>--spot_yx</td><td>3.0</td><td>Expected spot radius in XY (pixels)</td></tr>
+    <tr><td>--spot_z</td><td>2.0</td><td>Expected spot radius in Z (planes)</td></tr>
+    <tr><td>--min_snr</td><td>2.0</td><td>Minimum SNR after Gaussian fit</td></tr>
+    <tr><td>--max_sigma_ratio</td><td>2.5</td><td>Reject spots with sigma &gt; N × spot_yx</td></tr>
+    <tr><td>--tile_size</td><td>128</td><td>Tile size for adaptive noise estimation</td></tr>
+    <tr><td>--use_3d</td><td>off</td><td>Full 3-D LoG detection (slower)</td></tr>
+  </table>
+  <h3>Z-projection</h3>
+  <table>
+    <tr><th>Flag</th><th>Default</th><th>Description</th></tr>
+    <tr><td>--projection</td><td>max</td><td>max | mean | best_focus | middle</td></tr>
+  </table>
+  <h3>Cellpose</h3>
+  <table>
+    <tr><th>Flag</th><th>Default</th><th>Description</th></tr>
+    <tr><td>--cellpose_model</td><td>—</td><td>Path to Cellpose model. Omit to skip segmentation.</td></tr>
+    <tr><td>--cellpose_diam</td><td>0</td><td>Expected cell diameter in px. 0 = auto.</td></tr>
+  </table>
+  <h3>Run control</h3>
+  <table>
+    <tr><th>Flag</th><th>Default</th><th>Description</th></tr>
+    <tr><td>--run_only</td><td>both</td><td>piscis | cellpose | both</td></tr>
+    <tr><td>--workers</td><td>4</td><td>Parallel threads (max 20)</td></tr>
+    <tr><td>--batch_size</td><td>8</td><td>Piscis internal batch size</td></tr>
+  </table>
+  <h3>Previews</h3>
+  <table>
+    <tr><th>Flag</th><th>Default</th><th>Description</th></tr>
+    <tr><td>--save_previews</td><td>off</td><td>Export 8-bit PNGs for the viewer</td></tr>
+    <tr><td>--percentile_low</td><td>1.0</td><td>Lower percentile for contrast stretch</td></tr>
+    <tr><td>--percentile_high</td><td>99.5</td><td>Upper percentile for contrast stretch</td></tr>
+  </table>
+</section>
+
+<!-- ── Tuning ── -->
+<section id="tuning">
+  <h2>Tuning Guide</h2>
+  <h3>SpotCaller — step by step</h3>
+  <ol style="padding-left:20px;line-height:2.2">
+    <li><strong>Measure spot_yx</strong> — open a preview in ImageJ/Fiji, draw a line across a bright spot, measure the FWHM in pixels. Divide by 2.35 to get sigma. Set <code>--spot_yx</code> to roughly this sigma value (typically 2–4 for smFISH).</li>
+    <li><strong>Set threshold</strong> — start at 5.0. Check the count in spot_counts.csv. If you're missing real spots, lower it. If you have debris and autofluorescence detections, raise it. The range 3–8 covers most datasets.</li>
+    <li><strong>Adjust min_snr</strong> — open the viewer, load a spots CSV, zoom into a region with suspect detections. Low-SNR spots (&lt;2) are typically noise. Raise min_snr to 3–4 to clean up.</li>
+    <li><strong>Check sigma</strong> — in the SpotCaller CSV, look at the sigma_y and sigma_x distribution. Spots with sigma &gt; 2× spot_yx are usually aggregates or out-of-focus debris. Lower max_sigma_ratio to reject them.</li>
+  </ol>
+
+  <h3>Piscis — step by step</h3>
+  <ol style="padding-left:20px;line-height:2.2">
+    <li><strong>Start at threshold 0.5</strong> — this is the probability cutoff from the model's sigmoid output.</li>
+    <li><strong>Lower to detect more spots</strong> — try 0.3 or 0.2 if you're missing dim spots.</li>
+    <li><strong>Raise to reduce false positives</strong> — try 0.6–0.8 if you see background detections.</li>
+  </ol>
+
+  <h3>Comparing runs in the viewer</h3>
+  <p>Use the <strong>comparison mode</strong> in the viewer to overlay spot sets from multiple runs side by side. Load different CSVs from different threshold settings — each gets a distinct colour. Use the toggle buttons to show/hide each set and compare counts in the table.</p>
+</section>
+
+<!-- ── Viewer ── -->
+<section id="viewer">
+  <h2>Spot Viewer</h2>
+  <p>The viewer is a self-contained HTML file that runs entirely in the browser — no server needed. Open <code>spot_viewer.html</code> directly.</p>
+  <h3>Loading data</h3>
+  <p>Drop your entire output folder onto the <strong>📂 folder drop zone</strong>. The viewer auto-detects and routes each file by name:</p>
+  <table>
+    <tr><th>Pattern</th><th>Loaded as</th></tr>
+    <tr><td>*_spots.csv</td><td>Spot coordinates</td></tr>
+    <tr><td>*_cells.csv</td><td>Per-cell count table</td></tr>
+    <tr><td>*_mask.png</td><td>Cell mask overlay</td></tr>
+    <tr><td>*.png / *.tif / *.jpg</td><td>Channel image</td></tr>
+  </table>
+  <h3>Comparison mode</h3>
+  <p>Load spot CSVs from multiple runs into the same viewer session. Each run's spots are shown in a distinct colour with a toggle button. Use the count table to compare detections per cell across runs.</p>
+  <h3>Keyboard shortcuts</h3>
+  <table>
+    <tr><th>Key</th><th>Action</th></tr>
+    <tr><td>↑ / k</td><td>Previous FOV</td></tr>
+    <tr><td>↓ / j</td><td>Next FOV</td></tr>
+    <tr><td>← / h</td><td>Previous channel</td></tr>
+    <tr><td>→ / l</td><td>Next channel</td></tr>
+    <tr><td>s</td><td>Toggle spots</td></tr>
+    <tr><td>m</td><td>Toggle mask</td></tr>
+    <tr><td>r</td><td>Reset view</td></tr>
+    <tr><td>+ / -</td><td>Zoom in / out</td></tr>
+  </table>
+</section>
+
+<!-- ── GUI ── -->
+<section id="gui">
+  <h2>Web GUI</h2>
+  <pre><code>python app.py <span class="flag">--host</span> 0.0.0.0 <span class="flag">--port</span> 5000</code></pre>
+  <p>The GUI exposes all pipeline parameters through a browser interface. It streams live log output via Server-Sent Events and maintains a job history.</p>
+  <table>
+    <tr><th>Endpoint</th><th>Description</th></tr>
+    <tr><td>GET /</td><td>Main GUI</td></tr>
+    <tr><td>GET /viewer</td><td>Serve spot_viewer.html</td></tr>
+    <tr><td>POST /api/run</td><td>Submit a new job (JSON body)</td></tr>
+    <tr><td>GET /api/jobs</td><td>List all jobs</td></tr>
+    <tr><td>GET /api/jobs/&lt;id&gt;</td><td>Job details + last 500 log lines</td></tr>
+    <tr><td>GET /api/stream/&lt;id&gt;</td><td>SSE live log stream</td></tr>
+    <tr><td>GET /api/logs/&lt;id&gt;</td><td>Download full log file</td></tr>
+    <tr><td>POST /api/cancel/&lt;id&gt;</td><td>SIGTERM a running job</td></tr>
+    <tr><td>GET /api/browse</td><td>Directory listing for path autocomplete</td></tr>
+  </table>
+</section>
+
+<!-- ── Python API ── -->
+<section id="api">
+  <h2>Python API</h2>
+  <h3>SpotCaller drop-in replacement for Piscis</h3>
+  <pre><code><span class="kw">from</span> spot_caller <span class="kw">import</span> SpotCaller
+
+<span class="comment"># Same interface as Piscis.predict()</span>
+model  = SpotCaller(spot_yx=<span class="num">3.0</span>, threshold=<span class="num">5.0</span>, min_snr=<span class="num">2.0</span>)
+spots  = model.predict(image_2d)   <span class="comment"># returns (N, 2) float32 [y, x]</span>
+
+<span class="comment"># Full output with quality metrics</span>
+df = model.detect(image_2d)
+<span class="comment"># df columns: y, x, y_sub, x_sub, z_plane, snr, sigma_y, sigma_x, amplitude</span>
+
+<span class="comment"># Post-filter by SNR</span>
+confident = df[df.snr > <span class="num">3.0</span>]
+
+<span class="comment"># 3-D detection on a z-stack</span>
+df_3d = model.detect_3d(stack_zyx)</code></pre>
+
+  <h3>Batch processing from Python</h3>
+  <pre><code><span class="kw">from</span> run_piscis <span class="kw">import</span> batch_process
+<span class="kw">from</span> pathlib <span class="kw">import</span> Path
+
+batch_process(
+    input_dir=Path(<span class="str">"/data/experiment"</span>),
+    output_dir=Path(<span class="str">"/results/run1"</span>),
+    pattern=<span class="str">"*.tif"</span>,
+    detector=<span class="str">"spot_caller"</span>,
+    model_name=<span class="str">"20230905"</span>,
+    piscis_threshold=<span class="num">0.5</span>,
+    spot_yx=<span class="num">3.0</span>, spot_z=<span class="num">2.0</span>,
+    sc_threshold=<span class="num">5.0</span>, min_snr=<span class="num">2.0</span>,
+    max_sigma_ratio=<span class="num">2.5</span>, tile_size=<span class="num">128</span>,
+    sc_use_3d=<span class="kw">False</span>,
+    projection=<span class="str">"max"</span>,
+    cellpose_model_path=<span class="str">"/models/cellpose_cd4"</span>,
+    cellpose_diam=<span class="num">0</span>,
+    run_only=<span class="str">"both"</span>,
+    save_previews=<span class="kw">True</span>,
+    percentile_low=<span class="num">1.0</span>, percentile_high=<span class="num">99.5</span>,
+    workers=<span class="num">8</span>,
+)</code></pre>
+</section>
+
+<!-- ── Comparison ── -->
+<section id="comparison">
+  <h2>Detector Comparison</h2>
+  <table>
+    <tr><th>Criterion</th><th>Faryabi Spot Calling</th><th>SpotCaller</th></tr>
+    <tr><td>Speed (CPU)</td><td>Medium</td><td>Medium–Fast</td></tr>
+    <tr><td>Speed (GPU)</td><td>Very fast</td><td>N/A</td></tr>
+    <tr><td>Model required</td><td>Yes</td><td>No</td></tr>
+    <tr><td>Out-of-distribution</td><td>May degrade</td><td>Robust</td></tr>
+    <tr><td>Sub-pixel coords</td><td>No</td><td>Yes</td></tr>
+    <tr><td>Per-spot metrics</td><td>No</td><td>SNR, sigma, amplitude</td></tr>
+    <tr><td>Uneven illumination</td><td>Partial</td><td>Good (adaptive noise)</td></tr>
+    <tr><td>Very dim spots</td><td>Depends on model</td><td>Good (low threshold)</td></tr>
+    <tr><td>Dense spots</td><td>Good</td><td>Good (tight NMS)</td></tr>
+    <tr><td>Interpretability</td><td>Black box</td><td>Fully interpretable</td></tr>
+  </table>
+  <p>For new datasets or when debugging detections, run both and compare in the viewer's comparison mode. SpotCaller's SNR and sigma columns are particularly useful for identifying why certain spots are missed or falsely detected.</p>
+</section>
+
+<!-- ── FAQ ── -->
+<section id="faq">
+  <h2>FAQ</h2>
+  <h3>Why does the script skip my files?</h3>
+  <p>Check the log file — skipped files are logged with <code>SKIP</code>. Common causes: the filename has no Cy3/Cy5/DAPI keyword, it starts with a dot (hidden file), or it has non-ASCII characters. Run <code>ls -la</code> in your input directory to check.</p>
+
+  <h3>Piscis model not found — ValueError: Model X is not found</h3>
+  <p>If using a named model like <code>20230905</code>, Piscis downloads it from HuggingFace on first use. Check your internet connection. If using a local model, provide the full path.</p>
+
+  <h3>Cellpose error: CP3 models not compatible with CP4</h3>
+  <p>Your model was trained with Cellpose 3. Install <code>pip install "cellpose&lt;4"</code>.</p>
+
+  <h3>SpotCaller detects too many spots</h3>
+  <p>Increase <code>--threshold</code> (try 7–10), increase <code>--min_snr</code> (try 3.0), or decrease <code>--max_sigma_ratio</code> (try 1.8). Check if <code>--spot_yx</code> matches your actual spot size — if it's too large it will accept wide blobs.</p>
+
+  <h3>SpotCaller misses dim spots</h3>
+  <p>Lower <code>--threshold</code> (try 3.0), lower <code>--min_snr</code> (try 1.5). Also check that <code>--spot_yx</code> is not too small — underestimating spot size reduces the LoG response.</p>
+
+  <h3>The viewer won't load my TIF files</h3>
+  <p>Browsers cannot decode scientific multi-page 16-bit TIFs. Run the pipeline with <code>--save_previews</code> to generate 8-bit PNGs, then load those instead. The pipeline PNG previews use the same best-focus plane / projection as detection.</p>
+</section>
+
+</main>
+</div>
+
+<script>
+// Active nav highlight on scroll
+const sections = document.querySelectorAll('section[id]');
+const links = document.querySelectorAll('nav a');
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      links.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#' + e.target.id));
+    }
+  });
+}, { rootMargin: '-20% 0px -70% 0px' });
+sections.forEach(s => obs.observe(s));
+</script>
+
+<script>
+(function(){
+  const saved = localStorage.getItem('fsc-theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
+  document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('theme-toggle');
+    if (btn) btn.textContent = saved === 'dark' ? '☀' : '☾';
+  });
+})();
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('fsc-theme', next);
+  const btn = document.getElementById('theme-toggle');
+  if (btn) btn.textContent = next === 'dark' ? '☀' : '☾';
+}
+</script>
+</body>
+</html>

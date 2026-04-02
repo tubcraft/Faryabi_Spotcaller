@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Faryabi Spot Calling — Viewer</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600&family=Syne:wght@400;700;800&display=swap');
+:root {
+  color-scheme: dark light;
+}
+
+:root[data-theme="light"] {
+  --bg:      #f0f2f5;
+  --surface: #ffffff;
+  --panel:   #f7f8fa;
+  --border:  #dde1e8;
+  --border2: #c8cdd8;
+  --text:    #1a2030;
+  --muted:   #6b7897;
+  --dim:     #a0aabf;
+  --accent:  #0077cc;
+  --green:   #16a34a;
+  --amber:   #d97706;
+  --red:     #dc2626;
+  --cy3:     #c94f1a;
+  --cy5:     #7c3aed;
+  --dapi:    #1d4ed8;
+}
+
+:root, :root[data-theme="dark"] {
+  --bg:#0a0c0f; --surface:#111318; --panel:#13161e;
+  --border:#1e2229; --border2:#2a3040; --text:#c8d4e8; --muted:#4a5568;
+  --accent:#00e5ff; --cy3:#ff6b35; --cy5:#a855f7; --dapi:#3b82f6;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;height:100vh;overflow:hidden;display:grid;grid-template-rows:48px 1fr;grid-template-columns:296px 1fr;}
+
+/* header */
+header{grid-column:1/-1;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;padding:0 20px;}
+header h1{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;letter-spacing:.1em;color:var(--accent);text-transform:uppercase;}
+.htag{font-size:10px;letter-spacing:.1em;color:var(--muted);padding:2px 7px;border:1px solid var(--border2);border-radius:3px;}
+#status-bar{margin-left:auto;color:var(--muted);font-size:11px;}
+
+/* tabs in header */
+.view-tabs{display:flex;gap:2px;margin-left:auto;}
+.view-tab{padding:4px 14px;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--muted);font-family:inherit;font-size:11px;cursor:pointer;transition:all .15s;}
+.view-tab.active{border-color:var(--accent);color:var(--accent);background:rgba(0,229,255,.08);}
+#status-bar{color:var(--muted);font-size:11px;margin-left:8px;}
+
+/* sidebar */
+aside{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+.section-label{font-size:10px;font-weight:600;letter-spacing:.15em;color:var(--muted);text-transform:uppercase;padding:10px 14px 7px;border-bottom:1px solid var(--border);flex-shrink:0;}
+
+/* drop zones */
+.load-area{flex-shrink:0;padding:8px 10px;display:flex;flex-direction:column;gap:5px;border-bottom:1px solid var(--border);}
+.folder-drop{border:1px dashed var(--border2);border-radius:6px;padding:11px 10px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;color:var(--muted);font-size:11px;line-height:1.6;}
+.folder-drop:hover,.folder-drop.drag-over{border-color:var(--accent);background:rgba(0,229,255,.05);color:var(--text);}
+.folder-drop input,.mini-drop input{display:none;}
+.folder-drop .icon{font-size:20px;display:block;margin-bottom:2px;}
+.file-row{display:flex;gap:5px;}
+.mini-drop{flex:1;border:1px dashed var(--border2);border-radius:5px;padding:7px 6px;text-align:center;cursor:pointer;font-size:10px;color:var(--muted);transition:border-color .2s,background .2s;line-height:1.4;}
+.mini-drop:hover,.mini-drop.drag-over{border-color:var(--accent);background:rgba(0,229,255,.04);color:var(--text);}
+.mini-drop .mi{font-size:14px;display:block;}
+#load-progress{font-size:10px;color:var(--muted);text-align:center;padding:3px 0;display:none;}
+#load-progress.visible{display:block;}
+
+/* fov list */
+#fov-list{flex:1;overflow-y:auto;min-height:0;scrollbar-width:thin;scrollbar-color:var(--border2) transparent;}
+.fov-item{padding:7px 14px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .15s;display:flex;flex-direction:column;gap:2px;}
+.fov-item:hover{background:rgba(255,255,255,.03);}
+.fov-item.active{background:rgba(0,229,255,.07);border-left:2px solid var(--accent);}
+.fov-name{color:var(--text);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.fov-meta{color:var(--muted);font-size:10px;display:flex;gap:4px;flex-wrap:wrap;align-items:center;}
+.ch-pip{padding:1px 5px;border-radius:2px;font-size:9px;font-weight:600;}
+.ch-pip.cy3{background:rgba(255,107,53,.2);color:var(--cy3);}
+.ch-pip.cy5{background:rgba(168,85,247,.2);color:var(--cy5);}
+.ch-pip.dapi{background:rgba(59,130,246,.2);color:var(--dapi);}
+
+/* cell count table */
+#cell-table-wrap{border-top:1px solid var(--border);flex-shrink:0;max-height:140px;overflow-y:auto;display:none;scrollbar-width:thin;}
+#cell-table-wrap.visible{display:block;}
+#cell-table{width:100%;border-collapse:collapse;font-size:11px;}
+#cell-table th{position:sticky;top:0;background:var(--panel);padding:5px 10px;text-align:left;color:var(--muted);font-size:9px;letter-spacing:.08em;text-transform:uppercase;border-bottom:1px solid var(--border);}
+#cell-table td{padding:4px 10px;border-bottom:1px solid var(--border);}
+#cell-table tr:hover td{background:rgba(255,255,255,.03);}
+#cell-table tr.hl td{background:rgba(0,229,255,.08);}
+
+/* controls */
+.controls{border-top:1px solid var(--border);padding:8px 13px;display:flex;flex-direction:column;gap:7px;flex-shrink:0;}
+.ctrl-row{display:flex;align-items:center;gap:7px;}
+.ctrl-label{color:var(--muted);font-size:10px;letter-spacing:.07em;text-transform:uppercase;flex-shrink:0;min-width:50px;}
+input[type=range]{flex:1;accent-color:var(--accent);height:3px;cursor:pointer;}
+.val-badge{min-width:36px;text-align:right;color:var(--accent);font-size:11px;}
+.ctrl-divider{height:1px;background:var(--border);margin:1px 0;}
+.ch-switcher{display:flex;gap:3px;flex:1;}
+.ch-sw-btn{flex:1;padding:3px 4px;border-radius:3px;border:1px solid var(--border2);background:transparent;color:var(--muted);font-family:inherit;font-size:11px;cursor:pointer;transition:all .15s;text-align:center;}
+.ch-sw-btn:disabled{opacity:.25;cursor:default;}
+.ch-sw-btn.active-cy3{background:rgba(255,107,53,.2);border-color:var(--cy3);color:var(--cy3);}
+.ch-sw-btn.active-cy5{background:rgba(168,85,247,.2);border-color:var(--cy5);color:var(--cy5);}
+.ch-sw-btn.active-dapi{background:rgba(59,130,246,.2);border-color:var(--dapi);color:var(--dapi);}
+.mode-row{display:flex;gap:4px;}
+.mode-btn{flex:1;padding:3px 8px;border-radius:3px;border:1px solid var(--border2);background:transparent;color:var(--muted);font-family:inherit;font-size:10px;cursor:pointer;transition:all .15s;}
+.mode-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(0,229,255,.08);}
+.ch-sub{font-size:9px;letter-spacing:.08em;color:var(--muted);text-align:center;opacity:.65;}
+.toggle-btn{padding:3px 10px;border-radius:3px;border:1px solid var(--border2);background:transparent;color:var(--muted);font-family:inherit;font-size:11px;cursor:pointer;transition:all .15s;}
+.toggle-btn.on{border-color:var(--accent);color:var(--accent);background:rgba(0,229,255,.08);}
+.toggle-btn.on-mask{border-color:#22d3ee;color:#22d3ee;background:rgba(34,211,238,.08);}
+
+/* ── COMPARISON PANEL ── */
+#compare-panel{display:none;flex-direction:column;overflow:hidden;}
+#compare-panel.visible{display:flex;}
+#compare-sets{flex:1;overflow-y:auto;min-height:0;padding:0;scrollbar-width:thin;scrollbar-color:var(--border2) transparent;}
+.cset-row{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--border);}
+.cset-swatch{width:12px;height:12px;border-radius:50%;flex-shrink:0;}
+.cset-name{flex:1;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.cset-count{color:var(--muted);font-size:10px;flex-shrink:0;}
+.cset-toggle{padding:2px 8px;border-radius:3px;border:1px solid var(--border2);background:transparent;color:var(--muted);font-family:inherit;font-size:10px;cursor:pointer;transition:all .15s;flex-shrink:0;}
+.cset-toggle.on{border-color:currentColor;}
+.cset-toggle.rm{color:var(--muted);}
+.cset-toggle.rm:hover{color:var(--red);border-color:var(--red);}
+.compare-summary{flex-shrink:0;border-top:1px solid var(--border);padding:8px 14px;}
+.compare-summary table{width:100%;font-size:11px;border-collapse:collapse;}
+.compare-summary td{padding:3px 6px;}
+.compare-summary td:first-child{color:var(--muted);}
+.compare-add{margin:8px 10px;border:1px dashed var(--border2);border-radius:5px;padding:9px;text-align:center;cursor:pointer;font-size:11px;color:var(--muted);transition:all .2s;}
+.compare-add:hover{border-color:var(--accent);color:var(--accent);}
+.compare-add input{display:none;}
+
+/* main canvas */
+main{position:relative;overflow:hidden;background:#06080a;display:flex;align-items:center;justify-content:center;}
+#canvas-wrap{position:relative;transform-origin:center center;cursor:grab;user-select:none;}
+#canvas-wrap.grabbing{cursor:grabbing;}
+#img-canvas{display:block;}
+#mask-canvas{position:absolute;top:0;left:0;pointer-events:none;}
+#spot-canvas{position:absolute;top:0;left:0;pointer-events:none;}
+#ch-badge{position:absolute;top:12px;left:12px;padding:4px 12px;border-radius:4px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;letter-spacing:.08em;display:none;border:1px solid;}
+#ch-badge.cy3{background:rgba(255,107,53,.15);border-color:var(--cy3);color:var(--cy3);}
+#ch-badge.cy5{background:rgba(168,85,247,.15);border-color:var(--cy5);color:var(--cy5);}
+#ch-badge.dapi{background:rgba(59,130,246,.15);border-color:var(--dapi);color:var(--dapi);}
+#linked-badge{position:absolute;top:12px;left:82px;padding:3px 9px;border-radius:4px;font-size:10px;display:none;border:1px solid var(--accent);color:var(--accent);background:rgba(0,229,255,.07);}
+#linked-badge.visible{display:block;}
+#compare-badge{position:absolute;top:12px;left:12px;padding:4px 12px;border-radius:4px;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;display:none;border:1px solid var(--accent);color:var(--accent);background:rgba(0,229,255,.08);}
+#compare-badge.visible{display:block;}
+#empty-state{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--muted);pointer-events:none;}
+#empty-state .big{font-size:48px;}
+#empty-state p{font-size:12px;letter-spacing:.05em;}
+
+/* count overlay */
+#count-overlay{position:absolute;top:12px;right:12px;background:var(--panel);border:1px solid var(--border2);border-radius:6px;padding:8px 14px;font-size:11px;display:none;flex-direction:column;gap:4px;}
+#count-overlay.visible{display:flex;}
+.count-row{display:flex;justify-content:space-between;gap:20px;}
+.count-ch{font-size:10px;}
+.count-n{font-weight:600;}
+
+/* compare count overlay */
+#cmp-overlay{position:absolute;top:12px;right:12px;background:var(--panel);border:1px solid var(--border2);border-radius:6px;padding:10px 14px;font-size:11px;display:none;flex-direction:column;gap:5px;min-width:180px;}
+#cmp-overlay.visible{display:flex;}
+.cmp-row{display:flex;justify-content:space-between;gap:16px;align-items:center;}
+.cmp-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.cmp-name{flex:1;color:var(--text);font-size:11px;overflow:hidden;text-overflow:ellipsis;}
+.cmp-n{font-weight:600;font-size:12px;}
+
+zoom bar */
+#zoom-bar{position:absolute;bottom:16px;right:16px;display:flex;gap:6px;align-items:center;background:var(--panel);border:1px solid var(--border2);border-radius:6px;padding:5px 10px;font-size:11px;color:var(--muted);}
+#zoom-bar button{background:none;border:none;color:var(--text);font-size:15px;cursor:pointer;padding:0 3px;transition:color .15s;}
+#zoom-bar button:hover{color:var(--accent);}
+#zoom-label{min-width:38px;text-align:center;color:var(--text);}
+
+/* Smooth theme transition — applied only to non-rendering elements */
+header, aside, nav, .controls, .fov-item, .ch-sw-btn, .toggle-btn,
+.drop-zone, .mini-drop, .mode-btn, .det-btn, .browse-btn,
+#count-overlay, #cmp-overlay, #cell-hover-tip, #zoom-bar,
+.section-label, .val-badge, .ctrl-label, .ch-pip, #status-bar {
+  transition: background-color .2s ease, border-color .2s ease, color .15s ease;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Faryabi Spot Calling</h1>
+  <span class="htag">smFISH · Cellpose · multi-channel</span>
+  <div class="view-tabs">
+    <button class="view-tab active" id="tab-single" onclick="setMode('single')">Single Run</button>
+    <button class="view-tab" id="tab-compare" onclick="setMode('compare')">Compare Runs</button>
+  </div>
+  <div id="status-bar">No data loaded</div>
+<button id="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode" style="
+  background:transparent;border:1px solid var(--border2);border-radius:4px;
+  color:var(--muted);font-size:14px;cursor:pointer;padding:3px 9px;
+  transition:all .2s;line-height:1;font-family:inherit;
+" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
+   onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--muted)'">☀</button>
+</header>
+
+<aside>
+  <div class="section-label">Load Data</div>
+  <div class="load-area">
+    <div class="folder-drop" id="folder-drop">
+      <input type="file" id="folder-input" webkitdirectory multiple>
+      <span class="icon">📂</span>
+      <strong>Drop output folder here</strong><br>or click to select
+    </div>
+    <div id="load-progress"></div>
+    <div class="file-row">
+      <div class="mini-drop" id="img-drop"><input type="file" id="img-input" multiple accept=".tif,.tiff,.png,.jpg,.jpeg"><span class="mi">🔬</span>Images</div>
+      <div class="mini-drop" id="csv-drop"><input type="file" id="csv-input" multiple accept=".csv"><span class="mi">📍</span>CSVs</div>
+      <div class="mini-drop" id="mask-drop"><input type="file" id="mask-input" multiple accept=".png"><span class="mi">🔷</span>Masks</div>
+    </div>
+  </div>
+
+  <div class="section-label">Fields of View</div>
+  <div id="fov-list"><div style="padding:14px;color:var(--muted);font-size:11px">Drop your output folder to begin</div></div>
+
+  <div id="cell-table-wrap">
+    <table id="cell-table">
+      <thead><tr><th>Cell</th><th style="color:var(--cy3)">Cy3</th><th style="color:var(--cy5)">Cy5</th></tr></thead>
+      <tbody id="cell-tbody"></tbody>
+    </table>
+  </div>
+
+  <!-- Single-run controls -->
+  <div class="controls" id="single-controls">
+    <div class="ctrl-row">
+      <span class="ctrl-label">Channel</span>
+      <div class="ch-switcher">
+        <button class="ch-sw-btn" id="sw-cy3"  onclick="switchChannel('Cy3')"  disabled>Cy3</button>
+        <button class="ch-sw-btn" id="sw-cy5"  onclick="switchChannel('Cy5')"  disabled>Cy5</button>
+        <button class="ch-sw-btn" id="sw-dapi" onclick="switchChannel('DAPI')" disabled>DAPI</button>
+      </div>
+    </div>
+    <div class="ctrl-row">
+      <span class="ctrl-label">Settings</span>
+      <div class="mode-row" style="flex:1">
+        <button class="mode-btn" id="mode-indep" onclick="setSettingsMode('independent')">per channel</button>
+        <button class="mode-btn active" id="mode-linked" onclick="setSettingsMode('linked')">linked</button>
+      </div>
+    </div>
+    <div class="ch-sub" id="ch-sub">linked — changes apply to all</div>
+    <div class="ctrl-divider"></div>
+    <div class="ctrl-row">
+      <span class="ctrl-label">Int. min</span>
+      <input type="range" id="int-min" min="0" max="254" value="0" oninput="onIntMinChange()">
+      <span class="val-badge" id="int-min-val">0</span>
+    </div>
+    <div class="ctrl-row">
+      <span class="ctrl-label">Gamma</span>
+      <input type="range" id="gamma" min="10" max="300" value="100" oninput="saveSliders();renderImage()">
+      <span class="val-badge" id="gamma-val">1.00</span>
+    </div>
+    <div class="ctrl-row">
+      <span class="ctrl-label">Int. max</span>
+      <input type="range" id="int-max" min="1" max="255" value="255" oninput="onIntMaxChange()">
+      <span class="val-badge" id="int-max-val">255</span>
+    </div>
+    <div class="ctrl-divider"></div>
+    <div class="ctrl-row">
+      <span class="ctrl-label">Spots</span>
+      <button class="toggle-btn on" id="btn-spots" onclick="toggleSpots()">● visible</button>
+    </div>
+    <div class="ctrl-row">
+      <span class="ctrl-label">Spot α</span>
+      <input type="range" id="spot-alpha" min="10" max="100" value="80" oninput="saveSliders();renderSpots()">
+      <span class="val-badge" id="alpha-val">80%</span>
+    </div>
+    <div class="ctrl-row">
+      <span class="ctrl-label">Spot px</span>
+      <input type="range" id="spot-size" min="2" max="20" value="5" oninput="saveSliders();renderSpots()">
+      <span class="val-badge" id="size-val">5px</span>
+    </div>
+    <div class="ctrl-divider"></div>
+    <div class="ctrl-row">
+      <span class="ctrl-label">Mask</span>
+      <button class="toggle-btn on-mask" id="btn-mask" onclick="toggleMask()">● visible</button>
+      <input type="range" id="mask-alpha" min="5" max="100" value="60" oninput="renderMask()">
+      <span class="val-badge" id="mask-alpha-val">60%</span>
+    </div>
+  </div>
+
+  <!-- Compare-mode panel -->
+  <div id="compare-panel">
+    <div class="section-label">Loaded Spot Sets</div>
+    <div id="compare-sets"><div style="padding:14px;color:var(--muted);font-size:11px">Load multiple spot CSVs to compare</div></div>
+    <div class="compare-add" id="compare-add-btn">
+      <input type="file" id="compare-csv-input" multiple accept=".csv">
+      + Add spot CSV set
+    </div>
+    <div class="compare-summary" id="compare-summary" style="display:none">
+      <table id="cmp-sum-table"></table>
+    </div>
+    <div class="controls" style="border-top:1px solid var(--border)">
+      <div class="ctrl-row">
+        <span class="ctrl-label">Int. min</span>
+        <input type="range" id="cmp-int-min" min="0" max="254" value="0" oninput="renderCompareImage()">
+        <span class="val-badge" id="cmp-int-min-val">0</span>
+      </div>
+      <div class="ctrl-row">
+        <span class="ctrl-label">Gamma</span>
+        <input type="range" id="cmp-gamma" min="10" max="300" value="100" oninput="renderCompareImage()">
+        <span class="val-badge" id="cmp-gamma-val">1.00</span>
+      </div>
+      <div class="ctrl-row">
+        <span class="ctrl-label">Int. max</span>
+        <input type="range" id="cmp-int-max" min="1" max="255" value="255" oninput="renderCompareImage()">
+        <span class="val-badge" id="cmp-int-max-val">255</span>
+      </div>
+      <div class="ctrl-row">
+        <span class="ctrl-label">Spot px</span>
+        <input type="range" id="cmp-spot-size" min="2" max="20" value="5" oninput="renderCompareSpots()">
+        <span class="val-badge" id="cmp-size-val">5px</span>
+      </div>
+      <div class="ctrl-row">
+        <span class="ctrl-label">Spot α</span>
+        <input type="range" id="cmp-spot-alpha" min="10" max="100" value="70" oninput="renderCompareSpots()">
+        <span class="val-badge" id="cmp-alpha-val">70%</span>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<main id="main-area">
+  <div id="empty-state"><span class="big">📂</span><p>Drop your output folder into the sidebar</p></div>
+  <div id="canvas-wrap">
+    <canvas id="img-canvas"></canvas>
+    <canvas id="mask-canvas"></canvas>
+    <canvas id="spot-canvas"></canvas>
+  </div>
+  <div id="ch-badge"></div>
+  <div id="linked-badge">⛓ linked</div>
+  <div id="compare-badge" class="visible" style="display:none">◈ compare mode</div>
+  <div id="count-overlay">
+    <div class="count-row"><span class="count-ch cy3-col" style="color:var(--cy3)">Cy3</span><span class="count-n" style="color:var(--cy3)" id="cnt-cy3">—</span></div>
+    <div class="count-row"><span class="count-ch cy5-col" style="color:var(--cy5)">Cy5</span><span class="count-n" style="color:var(--cy5)" id="cnt-cy5">—</span></div>
+    <div class="count-row" id="cnt-cells-row" style="display:none"><span class="count-ch" style="color:var(--dapi)">Cells</span><span class="count-n" style="color:var(--dapi)" id="cnt-cells">—</span></div>
+  </div>
+  <div id="cmp-overlay"></div>
+  <!-- Cell hover tooltip -->
+  <div id="cell-hover-tip" style="
+    position:absolute; display:none; pointer-events:none; z-index:30;
+    background:var(--panel); border:1px solid var(--border2); border-radius:6px;
+    padding:8px 14px; font-size:11px; min-width:120px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.5);
+  ">
+    <div style="font-family:'Syne',sans-serif;font-size:10px;font-weight:700;
+                letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+                margin-bottom:5px" id="tip-cell-label">Cell —</div>
+    <div style="display:flex;justify-content:space-between;gap:16px;margin-bottom:2px">
+      <span style="color:var(--cy3)">Cy3</span>
+      <span style="color:var(--cy3);font-weight:600" id="tip-cy3">—</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;gap:16px">
+      <span style="color:var(--cy5)">Cy5</span>
+      <span style="color:var(--cy5);font-weight:600" id="tip-cy5">—</span>
+    </div>
+  </div>
+
+  <div id="zoom-bar">
+    <button onclick="zoom(-0.25)">−</button>
+    <span id="zoom-label">100%</span>
+    <button onclick="zoom(+0.25)">+</button>
+    <button onclick="resetView()">⌂</button>
+  </div>
+</main>
+
+<script>
+// ─── Colour palette for comparison mode ──────────────────────────────────────
+const CMP_COLORS = [
+  '#00e5ff','#ff6b35','#a855f7','#22c55e','#f59e0b',
+  '#ec4899','#06b6d4','#84cc16','#f97316','#8b5cf6',
+];
+
+// ─── State ────────────────────────────────────────────────────────────────────
+const CHANNELS = ['Cy3','Cy5','DAPI'];
+const state = {
+  fovs:{}, posKeys:[], currentPos:null, currentCh:null,
+  showSpots:true, showMask:true,
+  settingsMode:'linked',
+  linkedSettings:{intMin:0,intMax:255,gamma:100,spotAlpha:80,spotSize:5},
+  scale:1, offset:{x:0,y:0},
+  maskData:null, maskW:0, maskH:0,
+  viewMode:'single',   // 'single' | 'compare'
+  // Compare mode
+  compareSets:[],   // [{id, label, color, visible, spots:{pos:{ch:[{y,x}]}}}]
+  compareCh:'Cy3',  // which channel to show in compare mode
+};
+
+const imgCanvas  = document.getElementById('img-canvas');
+const maskCanvas = document.getElementById('mask-canvas');
+const spotCanvas = document.getElementById('spot-canvas');
+const ctxImg     = imgCanvas.getContext('2d');
+const ctxMask    = maskCanvas.getContext('2d');
+const ctxSpot    = spotCanvas.getContext('2d');
+const wrap       = document.getElementById('canvas-wrap');
+const emptyState = document.getElementById('empty-state');
+const statusBar  = document.getElementById('status-bar');
+
+// ─── View mode toggle ─────────────────────────────────────────────────────────
+function setMode(mode) {
+  state.viewMode = mode;
+  document.getElementById('tab-single').classList.toggle('active', mode==='single');
+  document.getElementById('tab-compare').classList.toggle('active', mode==='compare');
+  document.getElementById('single-controls').style.display = mode==='single' ? '' : 'none';
+  document.getElementById('compare-panel').classList.toggle('visible', mode==='compare');
+  document.getElementById('count-overlay').classList.toggle('visible', mode==='single' && countVisible());
+  document.getElementById('cmp-overlay').style.display = mode==='compare' ? 'flex' : 'none';
+  document.getElementById('compare-badge').style.display = mode==='compare' ? 'block' : 'none';
+  document.getElementById('ch-badge').style.display = mode==='single' ? 'block' : 'none';
+  renderAll();
+}
+
+// ─── Settings mode ────────────────────────────────────────────────────────────
+function setSettingsMode(mode) {
+  state.settingsMode = mode;
+  document.getElementById('mode-indep').classList.toggle('active', mode==='independent');
+  document.getElementById('mode-linked').classList.toggle('active', mode==='linked');
+  document.getElementById('linked-badge').classList.toggle('visible', mode==='linked');
+  const sub = document.getElementById('ch-sub');
+  if (mode==='linked') { sub.textContent='linked — changes apply to all'; loadSliderSettings(state.linkedSettings); }
+  else { sub.textContent=state.currentCh?`settings for ${state.currentCh}`:'— no channel —'; if(state.currentPos&&state.currentCh){const fov=state.fovs[state.currentPos];if(fov){if(!fov.settings[state.currentCh])fov.settings[state.currentCh]=defaultSettings();loadSliderSettings(fov.settings[state.currentCh]);}} }
+}
+
+function defaultSettings(){return{intMin:0,intMax:255,gamma:100,spotAlpha:80,spotSize:5};}
+function activeSettings(){
+  if(state.settingsMode==='linked')return state.linkedSettings;
+  const fov=state.fovs[state.currentPos],ch=state.currentCh;
+  if(!fov||!ch)return state.linkedSettings;
+  if(!fov.settings[ch])fov.settings[ch]=defaultSettings();
+  return fov.settings[ch];
+}
+function saveSliders(){const s=activeSettings();s.intMin=parseInt(document.getElementById('int-min').value);s.intMax=parseInt(document.getElementById('int-max').value);s.gamma=parseInt(document.getElementById('gamma').value);s.spotAlpha=parseInt(document.getElementById('spot-alpha').value);s.spotSize=parseInt(document.getElementById('spot-size').value);}
+function loadSliderSettings(s){document.getElementById('int-min').value=s.intMin;document.getElementById('int-max').value=s.intMax;document.getElementById('gamma').value=s.gamma;document.getElementById('spot-alpha').value=s.spotAlpha;document.getElementById('spot-size').value=s.spotSize;document.getElementById('int-min-val').textContent=s.intMin;document.getElementById('int-max-val').textContent=s.intMax;document.getElementById('gamma-val').textContent=(s.gamma/100).toFixed(2);document.getElementById('alpha-val').textContent=s.spotAlpha+'%';document.getElementById('size-val').textContent=s.spotSize+'px';}
+function onIntMinChange(){const mn=document.getElementById('int-min'),mx=document.getElementById('int-max');if(parseInt(mn.value)>=parseInt(mx.value))mn.value=parseInt(mx.value)-1;document.getElementById('int-min-val').textContent=mn.value;saveSliders();renderImage();}
+function onIntMaxChange(){const mn=document.getElementById('int-min'),mx=document.getElementById('int-max');if(parseInt(mx.value)<=parseInt(mn.value))mx.value=parseInt(mn.value)+1;document.getElementById('int-max-val').textContent=mx.value;saveSliders();renderImage();}
+
+// ─── Filename parsing ─────────────────────────────────────────────────────────
+function parseFilename(filename) {
+  const isMask  = /_mask\.(png|tiff?)$/i.test(filename);
+  const isCells = /_cells\.csv$/i.test(filename);
+  let stem = filename
+    .replace(/\.(tif|tiff|png|jpe?g|csv)$/i, '')
+    .replace(/_mask$/i, '')
+    .replace(/_spots$/i, '')
+    .replace(/_cells$/i, '');
+  let ch = null;
+  for (const c of CHANNELS) {
+    const re = new RegExp('(?:^|[_-])' + c + '(?:[_-]|$)', 'i');
+    if (re.test(stem)) {
+      ch = c;
+      stem = stem
+        .replace(new RegExp('[_-]?' + c + '[_-]?', 'i'), '_')
+        .replace(/^_|_$/g, '')
+        .replace(/__+/g, '_');
+      break;
+    }
+  }
+  // hasChannel: true only when a recognised Cy3/Cy5/DAPI keyword was found.
+  // Files without a channel keyword (e.g. "spot_counts.csv", "cell_summary.csv",
+  // random PNGs) are rejected by callers that check this flag.
+  const hasChannel = ch !== null;
+  return { pos: stem.toLowerCase(), ch, isMask, isCells, hasChannel };
+}
+function ensureFOV(pos){if(!state.fovs[pos]){state.fovs[pos]={channels:{},masks:{},spots:{},cells:[],settings:{}};state.posKeys.push(pos);}}
+
+// ─── Image loading ────────────────────────────────────────────────────────────
+function resetState() {
+  // Clear all loaded data so a new folder starts fresh
+  state.fovs       = {};
+  state.posKeys    = [];
+  state.currentPos = null;
+  state.currentCh  = null;
+  state.maskData   = null;
+  state.maskW      = 0;
+  state.maskH      = 0;
+  state.compareSets = [];
+  // Clear canvases
+  ctxImg.clearRect(0, 0, imgCanvas.width, imgCanvas.height);
+  ctxMask.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
+  ctxSpot.clearRect(0, 0, spotCanvas.width, spotCanvas.height);
+  emptyState.style.display = 'flex';
+  imgCanvas.style.display = maskCanvas.style.display = spotCanvas.style.display = 'none';
+  document.getElementById('ch-badge').style.display = 'none';
+  document.getElementById('count-overlay').classList.remove('visible');
+  document.getElementById('cell-table-wrap').classList.remove('visible');
+  document.getElementById('fov-list').innerHTML =
+    '<div style="padding:14px;color:var(--muted);font-size:11px">Loading…</div>';
+  // Reset channel buttons
+  CHANNELS.forEach(c => {
+    const btn = document.getElementById('sw-' + c.toLowerCase());
+    if (btn) { btn.disabled = true; btn.className = 'ch-sw-btn'; }
+  });
+  statusBar.textContent = 'No data loaded';
+}
+
+async function loadFolder(files){
+  // Always reset when a new folder is dropped
+  resetState();
+
+  const valid=Array.from(files).filter(f=>{const n=f.name;if(n.startsWith('.')||n.startsWith('~$')||n.startsWith('__'))return false;return/\.(tif|tiff|png|jpe?g|csv)$/i.test(n);});
+  const prog=document.getElementById('load-progress');
+  prog.textContent=`Loading 0 / ${valid.length} files…`; prog.classList.add('visible');
+  const csvs=valid.filter(f=>/\.csv$/i.test(f.name)),imgs=valid.filter(f=>!/\.csv$/i.test(f.name));
+  let done=0;const tick=()=>{done++;prog.textContent=`Loading ${done} / ${valid.length} files…`;};
+  for(const f of csvs){await ingestFile(f,false);tick();}
+  for(const f of imgs){await ingestFile(f,false);tick();if(done%5===0)refreshFOVList();}
+  prog.classList.remove('visible'); refreshFOVList();
+}
+async function ingestFile(file, refresh=true) {
+  const { pos, ch, isMask, isCells, hasChannel } = parseFilename(file.name);
+
+  // Skip files that have no recognised channel keyword AND are not cell CSVs.
+  // This silently drops: spot_counts.csv, cell_summary.csv, run_*.log,
+  // mask .npy files, or any other pipeline output that isn't an image/spots/cells.
+  if (!hasChannel && !isCells) return;
+
+  ensureFOV(pos);
+
+  if (/\.csv$/i.test(file.name)) {
+    const text = await file.text();
+    if (isCells) {
+      state.fovs[pos].cells = parseCellsCSV(text);
+    } else {
+      const { ch: csvCh, spots } = parseSpotsCSV(text);
+      const key = ch || csvCh || 'Unknown';
+      state.fovs[pos].spots[key] = (state.fovs[pos].spots[key] || []).concat(spots);
+    }
+  } else {
+    const pixels = await fileToRGBA(file);
+    if (isMask) {
+      state.fovs[pos].masks[ch || 'DAPI'] = pixels;
+    } else {
+      const key = ch || 'Unknown';
+      if (!state.fovs[pos].settings[key]) state.fovs[pos].settings[key] = defaultSettings();
+      state.fovs[pos].channels[key] = pixels;
+    }
+  }
+  if (refresh) refreshFOVList();
+}
+async function fileToRGBA(file){if(/\.(tif|tiff)$/i.test(file.name))return tifToRGBA(file);return bitmapToRGBA(file);}
+async function bitmapToRGBA(file){const url=URL.createObjectURL(file);return new Promise(resolve=>{const img=new Image();img.onload=()=>{const off=document.createElement('canvas');off.width=img.naturalWidth;off.height=img.naturalHeight;const ctx=off.getContext('2d');ctx.drawImage(img,0,0);const id=ctx.getImageData(0,0,off.width,off.height);URL.revokeObjectURL(url);resolve({rawPixels:new Uint8ClampedArray(id.data),w:img.naturalWidth,h:img.naturalHeight});};img.src=url;});}
+async function tifToRGBA(file){if(!window.UTIF)await loadScript('https://cdnjs.cloudflare.com/ajax/libs/utif.js/3.1.0/UTIF.min.js');const buf=await file.arrayBuffer();const ifds=UTIF.decode(buf);UTIF.decodeImage(buf,ifds[0]);const rgba=UTIF.toRGBA8(ifds[0]);return{rawPixels:new Uint8ClampedArray(rgba),w:ifds[0].width,h:ifds[0].height};}
+function loadScript(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
+
+// ─── CSV parsers ──────────────────────────────────────────────────────────────
+function parseSpotsCSV(text){
+  const lines=text.trim().split('\n'),hdr=lines[0].split(',').map(h=>h.trim().toLowerCase());
+  const yi=hdr.indexOf('y'),xi=hdr.indexOf('x'),chi=hdr.indexOf('channel');
+  // Prefer sub-pixel cols if present
+  const ysi=hdr.indexOf('y_sub'),xsi=hdr.indexOf('x_sub');
+  let ch=null;
+  const spots=lines.slice(1).map(l=>{const c=l.split(',');if(!ch&&chi>=0)ch=c[chi]?.trim();
+    const y=parseFloat(ysi>=0?c[ysi]:c[yi]),x=parseFloat(xsi>=0?c[xsi]:c[xi]);return{y,x};
+  }).filter(s=>!isNaN(s.y)&&!isNaN(s.x));
+  return{ch,spots};
+}
+function parseCellsCSV(text){const lines=text.trim().split('\n'),hdr=lines[0].split(',').map(h=>h.trim().toLowerCase());return lines.slice(1).map(l=>{const c=l.split(','),o={};hdr.forEach((h,i)=>{o[h]=isNaN(c[i])?c[i]?.trim():parseFloat(c[i]);});return o;});}
+
+// ─── FOV list ─────────────────────────────────────────────────────────────────
+// Natural sort: splits "location_xy010" into ["location_xy", 10]
+// so numeric parts compare as numbers, not strings.
+function naturalSort(a, b) {
+  // Split each string into an array of [string, number, string, number ...]
+  function tokenise(s) {
+    return s.split(/(\.?\d+)/).map((t, i) =>
+      i % 2 === 1 ? parseInt(t, 10) : t.toLowerCase()
+    );
+  }
+  const ta = tokenise(a), tb = tokenise(b);
+  for (let i = 0; i < Math.max(ta.length, tb.length); i++) {
+    const va = ta[i] ?? '', vb = tb[i] ?? '';
+    if (va === vb) continue;
+    if (typeof va === 'number' && typeof vb === 'number') return va - vb;
+    return String(va) < String(vb) ? -1 : 1;
+  }
+  return 0;
+}
+
+function refreshFOVList(){
+  // Natural-sort the keys so xy001 < xy002 < xy010 < xy100
+  state.posKeys.sort(naturalSort);
+  const list=document.getElementById('fov-list'),keys=state.posKeys;
+  if(!keys.length){list.innerHTML='<div style="padding:14px;color:var(--muted);font-size:11px">Drop your output folder to begin</div>';return;}
+  list.innerHTML='';
+  keys.forEach(pos=>{
+    const fov=state.fovs[pos],chs=[...new Set([...Object.keys(fov.channels),...Object.keys(fov.spots)])];
+    const hasMask=Object.keys(fov.masks).length>0,hasCells=fov.cells.length>0;
+    const div=document.createElement('div');div.className='fov-item'+(pos===state.currentPos?' active':'');div.dataset.pos=pos;
+    const pips=chs.map(c=>`<span class="ch-pip ${c.toLowerCase()}">${c}</span>`).join('');
+    const extras=(hasMask?'🔷':'')+' '+(hasCells?'🔢':'');
+    div.innerHTML=`<span class="fov-name" title="${pos}">${pos}</span><span class="fov-meta">${pips}<span style="opacity:.5">${extras.trim()}</span></span>`;
+    div.onclick=()=>selectFOV(pos);list.appendChild(div);
+  });
+  const nImg=Object.values(state.fovs).reduce((s,f)=>s+Object.keys(f.channels).length,0);
+  statusBar.textContent=`${keys.length} FOVs · ${nImg} images`;
+  if(!state.currentPos&&keys.length>0)selectFOV(keys[0]);
+}
+
+// ─── FOV & channel selection ──────────────────────────────────────────────────
+function selectFOV(pos){
+  if(state.currentPos&&state.currentCh)saveSliders();
+  state.currentPos=pos;
+  document.querySelectorAll('.fov-item').forEach(el=>el.classList.toggle('active',el.dataset.pos===pos));
+  const fov=state.fovs[pos];
+  const avail=CHANNELS.filter(c=>fov.channels[c]||fov.spots[c]);
+  CHANNELS.forEach(c=>{document.getElementById('sw-'+c.toLowerCase()).disabled=!avail.includes(c);});
+  const ch=avail.includes(state.currentCh)?state.currentCh:(avail[0]||null);
+  switchChannel(ch,true);
+  updateCellTable(); updateCountOverlay();
+  if(state.viewMode==='compare')renderCompare();
+}
+function switchChannel(ch,skipSave=false){
+  if(!ch)return;const fov=state.fovs[state.currentPos];if(!fov)return;
+  if(!skipSave)saveSliders();
+  state.currentCh=ch;
+  CHANNELS.forEach(c=>document.getElementById('sw-'+c.toLowerCase()).classList.remove('active-cy3','active-cy5','active-dapi'));
+  document.getElementById('sw-'+ch.toLowerCase()).classList.add('active-'+ch.toLowerCase());
+  if(state.settingsMode==='linked'){loadSliderSettings(state.linkedSettings);document.getElementById('ch-sub').textContent='linked — changes apply to all';}
+  else{if(!fov.settings[ch])fov.settings[ch]=defaultSettings();loadSliderSettings(fov.settings[ch]);document.getElementById('ch-sub').textContent=`settings for ${ch}`;}
+  const badge=document.getElementById('ch-badge');badge.textContent=ch;badge.className=ch.toLowerCase();badge.style.display='block';
+  fitToView();renderAll();
+}
+function updateCellTable(){
+  const fov=state.fovs[state.currentPos],cells=fov?.cells||[];
+  const w=document.getElementById('cell-table-wrap'),tbody=document.getElementById('cell-tbody');
+  if(!cells.length){w.classList.remove('visible');return;}w.classList.add('visible');
+  tbody.innerHTML='';
+  cells.forEach(cell=>{const tr=document.createElement('tr');tr.dataset.cid=cell.cell_id;tr.innerHTML=`<td style="color:var(--muted)">#${cell.cell_id}</td><td style="color:var(--cy3)">${cell.cy3_spots??'—'}</td><td style="color:var(--cy5)">${cell.cy5_spots??'—'}</td>`;tr.onmouseenter=()=>document.querySelectorAll('#cell-tbody tr').forEach(r=>r.classList.toggle('hl',r.dataset.cid===tr.dataset.cid));tr.onmouseleave=()=>document.querySelectorAll('#cell-tbody tr').forEach(r=>r.classList.remove('hl'));tbody.appendChild(tr);});
+}
+function countVisible(){const fov=state.fovs[state.currentPos];if(!fov)return false;return(fov.spots['Cy3']||[]).length+(fov.spots['Cy5']||[]).length+(fov.cells.length)>0;}
+function updateCountOverlay(){
+  const fov=state.fovs[state.currentPos];if(!fov)return;
+  const nCy3=(fov.spots['Cy3']||[]).length,nCy5=(fov.spots['Cy5']||[]).length,nCells=fov.cells.length;
+  document.getElementById('cnt-cy3').textContent=nCy3||'—';document.getElementById('cnt-cy5').textContent=nCy5||'—';
+  document.getElementById('cnt-cells').textContent=nCells||'—';document.getElementById('cnt-cells-row').style.display=nCells?'':'none';
+  if(state.viewMode==='single')document.getElementById('count-overlay').classList.toggle('visible',nCy3+nCy5+nCells>0);
+}
+
+// ─── Single-run render ────────────────────────────────────────────────────────
+function fitToView(){
+  const entry=state.fovs[state.currentPos]?.channels[state.currentCh];
+  if(!entry)return;
+  const main=document.getElementById('main-area');
+  state.scale=Math.min((main.clientWidth-40)/entry.w,(main.clientHeight-80)/entry.h,1);
+  state.offset={x:0,y:0};applyTransform();
+}
+function applyTransform(){wrap.style.transform=`translate(${state.offset.x}px,${state.offset.y}px) scale(${state.scale})`;document.getElementById('zoom-label').textContent=Math.round(state.scale*100)+'%';}
+function renderAll(){if(state.viewMode==='compare')renderCompare();else{renderImage();renderMask();renderSpots();}}
+
+function renderImage(){
+  const entry=state.fovs[state.currentPos]?.channels[state.currentCh];
+  if(!entry){emptyState.style.display='flex';imgCanvas.style.display=maskCanvas.style.display=spotCanvas.style.display='none';return;}
+  emptyState.style.display='none';imgCanvas.style.display=maskCanvas.style.display=spotCanvas.style.display='block';
+  imgCanvas.width=maskCanvas.width=spotCanvas.width=entry.w;imgCanvas.height=maskCanvas.height=spotCanvas.height=entry.h;
+  const s=activeSettings(),lo=s.intMin,hi=s.intMax,range=hi-lo||1,g=s.gamma/100;
+  document.getElementById('gamma-val').textContent=g.toFixed(2);
+  const lut=new Uint8ClampedArray(256);for(let i=0;i<256;i++)lut[i]=Math.round(Math.pow(Math.max(0,Math.min(1,(i-lo)/range)),g)*255);
+  const src=entry.rawPixels,id=ctxImg.createImageData(entry.w,entry.h),dst=id.data;
+  for(let i=0;i<src.length;i+=4){const v=lut[Math.round(0.299*src[i]+0.587*src[i+1]+0.114*src[i+2])];dst[i]=dst[i+1]=dst[i+2]=v;dst[i+3]=src[i+3];}
+  ctxImg.putImageData(id,0,0);
+}
+function renderMask(){
+  const fov=state.fovs[state.currentPos],entry=fov?.masks?.['DAPI'];
+  ctxMask.clearRect(0,0,maskCanvas.width,maskCanvas.height);
+  if(!entry||!state.showMask){state.maskData=null;return;}
+
+  const alphaSlider = parseInt(document.getElementById('mask-alpha').value) / 100;
+  document.getElementById('mask-alpha-val').textContent =
+    document.getElementById('mask-alpha').value + '%';
+
+  const src = entry.rawPixels;
+  const id  = ctxMask.createImageData(entry.w, entry.h);
+  const dst = id.data;
+  const displayAlpha = Math.round(alphaSlider * 180);   // max opacity for display
+
+  for (let i = 0; i < src.length; i += 4) {
+    dst[i]   = src[i];
+    dst[i+1] = src[i+1];
+    dst[i+2] = src[i+2];
+    // src alpha encodes cell_id (1–N) from Python; 0 = background.
+    // For display: any cell pixel gets display alpha, background stays 0.
+    dst[i+3] = src[i+3] > 0 ? displayAlpha : 0;
+  }
+  ctxMask.putImageData(id, 0, 0);
+  // Keep raw pixels for hit-testing (alpha = cell_id)
+  state.maskData = src;
+  state.maskW = entry.w;
+  state.maskH = entry.h;
+}
+function renderSpots(){
+  const fov=state.fovs[state.currentPos],entry=fov?.channels[state.currentCh];if(!entry)return;
+  const spots=fov.spots[state.currentCh]||[];const s=activeSettings(),alpha=s.spotAlpha/100,r=s.spotSize;
+  document.getElementById('alpha-val').textContent=s.spotAlpha+'%';document.getElementById('size-val').textContent=r+'px';
+  ctxSpot.clearRect(0,0,spotCanvas.width,spotCanvas.height);if(!state.showSpots||!spots.length)return;
+  const fill=state.currentCh==='Cy3'?`rgba(255,107,53,${alpha})`:state.currentCh==='Cy5'?`rgba(168,85,247,${alpha})`:`rgba(59,130,246,${alpha})`;
+  const stroke=state.currentCh==='Cy3'?'#ff6b35':state.currentCh==='Cy5'?'#a855f7':'#3b82f6';
+  ctxSpot.fillStyle=fill;ctxSpot.strokeStyle=stroke;ctxSpot.lineWidth=1.2;
+  for(const sp of spots){ctxSpot.beginPath();ctxSpot.arc(sp.x,sp.y,r,0,Math.PI*2);ctxSpot.fill();ctxSpot.stroke();}
+}
+function toggleSpots(){state.showSpots=!state.showSpots;const b=document.getElementById('btn-spots');b.textContent=state.showSpots?'● visible':'○ hidden';b.className='toggle-btn'+(state.showSpots?' on':'');renderSpots();}
+function toggleMask(){state.showMask=!state.showMask;const b=document.getElementById('btn-mask');b.textContent=state.showMask?'● visible':'○ hidden';b.className='toggle-btn'+(state.showMask?' on-mask':'');renderMask();}
+
+// ─── Compare mode ─────────────────────────────────────────────────────────────
+let _cmpSetIdCounter = 0;
+
+async function loadCompareCsvFiles(files) {
+  for (const file of files) {
+    const text = await file.text();
+    const { ch, spots } = parseSpotsCSV(text);
+    const { pos } = parseFilename(file.name);
+    const color = CMP_COLORS[state.compareSets.length % CMP_COLORS.length];
+    const setId = ++_cmpSetIdCounter;
+    // Organise spots by pos → ch
+    const spotsByPos = {};
+    // If all spots have same pos from CSV fov column — group them
+    // Re-parse to get per-pos spots
+    const lines=text.trim().split('\n'),hdr=lines[0].split(',').map(h=>h.trim().toLowerCase());
+    const yi=hdr.indexOf('y'),xi=hdr.indexOf('x'),chi=hdr.indexOf('channel'),fovi=hdr.indexOf('fov');
+    const ysi=hdr.indexOf('y_sub'),xsi=hdr.indexOf('x_sub');
+    lines.slice(1).forEach(l=>{
+      const c=l.split(',');
+      const y=parseFloat(ysi>=0?c[ysi]:c[yi]),x=parseFloat(xsi>=0?c[xsi]:c[xi]);
+      if(isNaN(y)||isNaN(x))return;
+      const posKey=(fovi>=0?c[fovi]?.trim():null)||pos;
+      const chKey=(chi>=0?c[chi]?.trim():null)||ch||'Cy3';
+      if(!spotsByPos[posKey])spotsByPos[posKey]={};
+      if(!spotsByPos[posKey][chKey])spotsByPos[posKey][chKey]=[];
+      spotsByPos[posKey][chKey].push({y,x});
+    });
+    state.compareSets.push({
+      id: setId,
+      label: file.name.replace(/\.csv$/i,''),
+      color,
+      visible: true,
+      spotsByPos,
+    });
+  }
+  refreshCompareSets();
+  if (state.currentPos) renderCompare();
+}
+
+function refreshCompareSets() {
+  const container = document.getElementById('compare-sets');
+  if (!state.compareSets.length) {
+    container.innerHTML='<div style="padding:14px;color:var(--muted);font-size:11px">Load multiple spot CSVs to compare</div>';
+    document.getElementById('compare-summary').style.display='none';
+    return;
+  }
+  container.innerHTML='';
+  state.compareSets.forEach((s,idx) => {
+    // Count spots for current FOV
+    const pos = state.currentPos;
+    let n = 0;
+    if (pos && s.spotsByPos[pos]) {
+      Object.values(s.spotsByPos[pos]).forEach(arr => n += arr.length);
+    }
+    const row = document.createElement('div');
+    row.className = 'cset-row';
+    row.innerHTML = `
+      <div class="cset-swatch" style="background:${s.color}"></div>
+      <span class="cset-name" title="${s.label}">${s.label}</span>
+      <span class="cset-count">${n} spots</span>
+      <button class="cset-toggle on" style="color:${s.color};border-color:${s.color}" onclick="toggleCompareSet(${s.id})">${s.visible?'●':'○'}</button>
+      <button class="cset-toggle rm" onclick="removeCompareSet(${s.id})" title="Remove">×</button>`;
+    container.appendChild(row);
+  });
+  // Summary table
+  updateCompareSummary();
+}
+
+function updateCompareSummary() {
+  const pos = state.currentPos;
+  if (!pos || !state.compareSets.length) return;
+  const sumDiv = document.getElementById('compare-summary');
+  const tbl = document.getElementById('cmp-sum-table');
+  sumDiv.style.display = 'block';
+  // Get all channels across all sets
+  const chs = new Set();
+  state.compareSets.forEach(s => { if(s.spotsByPos[pos])Object.keys(s.spotsByPos[pos]).forEach(c=>chs.add(c)); });
+  let html = `<tr><td style="color:var(--muted)">Set</td>${[...chs].map(c=>`<td style="color:var(--accent)">${c}</td>`).join('')}</tr>`;
+  state.compareSets.forEach(s => {
+    const cells = [...chs].map(c=>{
+      const n=(s.spotsByPos[pos]?.[c]||[]).length;
+      return`<td style="color:${s.color}">${n}</td>`;
+    }).join('');
+    html += `<tr><td style="color:${s.color};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px" title="${s.label}">${s.label.slice(-16)}</td>${cells}</tr>`;
+  });
+  tbl.innerHTML = html;
+}
+
+function toggleCompareSet(id) {
+  const s = state.compareSets.find(x=>x.id===id);
+  if(s){s.visible=!s.visible;refreshCompareSets();renderCompare();}
+}
+function removeCompareSet(id) {
+  state.compareSets = state.compareSets.filter(x=>x.id!==id);
+  refreshCompareSets();renderCompare();
+}
+
+function renderCompare() {
+  const pos = state.currentPos;
+  // Try to find a background image — prefer Cy3, then Cy5, then DAPI
+  const fov = state.fovs[pos];
+  let bgEntry = null, bgCh = null;
+  for (const ch of ['Cy3','Cy5','DAPI']) {
+    if (fov?.channels[ch]) { bgEntry=fov.channels[ch]; bgCh=ch; break; }
+  }
+  renderCompareImage(bgEntry);
+  renderCompareSpots(pos);
+  updateCmpOverlay(pos);
+}
+
+function renderCompareImage(entry) {
+  const pos = state.currentPos;
+  const fov = state.fovs[pos];
+  let bg = entry;
+  if (!bg) for (const ch of ['Cy3','Cy5','DAPI']) { if(fov?.channels[ch]){bg=fov.channels[ch];break;} }
+  if (!bg) { emptyState.style.display='flex'; return; }
+  emptyState.style.display='none';
+  imgCanvas.style.display=maskCanvas.style.display=spotCanvas.style.display='block';
+  imgCanvas.width=maskCanvas.width=spotCanvas.width=bg.w;
+  imgCanvas.height=maskCanvas.height=spotCanvas.height=bg.h;
+
+  const lo=parseInt(document.getElementById('cmp-int-min').value);
+  const hi=parseInt(document.getElementById('cmp-int-max').value);
+  const range=hi-lo||1;
+  const g=parseInt(document.getElementById('cmp-gamma').value)/100;
+  document.getElementById('cmp-gamma-val').textContent=g.toFixed(2);
+  document.getElementById('cmp-int-min-val').textContent=lo;
+  document.getElementById('cmp-int-max-val').textContent=hi;
+  const lut=new Uint8ClampedArray(256);
+  for(let i=0;i<256;i++)lut[i]=Math.round(Math.pow(Math.max(0,Math.min(1,(i-lo)/range)),g)*255);
+  const src=bg.rawPixels,id=ctxImg.createImageData(bg.w,bg.h),dst=id.data;
+  for(let i=0;i<src.length;i+=4){const v=lut[Math.round(0.299*src[i]+0.587*src[i+1]+0.114*src[i+2])];dst[i]=dst[i+1]=dst[i+2]=v;dst[i+3]=src[i+3];}
+  ctxImg.putImageData(id,0,0);
+  ctxMask.clearRect(0,0,maskCanvas.width,maskCanvas.height);
+  // Fit to view
+  const main=document.getElementById('main-area');
+  state.scale=Math.min((main.clientWidth-40)/bg.w,(main.clientHeight-80)/bg.h,1);
+  state.offset={x:0,y:0};applyTransform();
+}
+
+function renderCompareSpots(pos) {
+  ctxSpot.clearRect(0,0,spotCanvas.width,spotCanvas.height);
+  const r=parseInt(document.getElementById('cmp-spot-size').value);
+  const alpha=parseInt(document.getElementById('cmp-spot-alpha').value)/100;
+  document.getElementById('cmp-size-val').textContent=r+'px';
+  document.getElementById('cmp-alpha-val').textContent=document.getElementById('cmp-spot-alpha').value+'%';
+  if(!pos)return;
+  // Draw each set in its colour
+  state.compareSets.forEach(s => {
+    if(!s.visible||!s.spotsByPos[pos])return;
+    const hex=s.color;
+    // Parse hex to rgba
+    const r2=parseInt(hex.slice(1,3),16),g2=parseInt(hex.slice(3,5),16),b2=parseInt(hex.slice(5,7),16);
+    ctxSpot.strokeStyle=hex;
+    ctxSpot.fillStyle=`rgba(${r2},${g2},${b2},${alpha})`;
+    ctxSpot.lineWidth=1.5;
+    Object.values(s.spotsByPos[pos]).forEach(spots => {
+      spots.forEach(sp => {
+        ctxSpot.beginPath();ctxSpot.arc(sp.x,sp.y,r,0,Math.PI*2);ctxSpot.fill();ctxSpot.stroke();
+      });
+    });
+  });
+}
+
+function updateCmpOverlay(pos) {
+  const el=document.getElementById('cmp-overlay');
+  if(!pos||!state.compareSets.length){el.style.display='none';return;}
+  el.style.display='flex';el.style.flexDirection='column';el.style.gap='5px';
+  el.innerHTML='';
+  state.compareSets.forEach(s=>{
+    let n=0;if(s.spotsByPos[pos])Object.values(s.spotsByPos[pos]).forEach(a=>n+=a.length);
+    const row=document.createElement('div');row.className='cmp-row';
+    const label=s.label.length>22?'…'+s.label.slice(-20):s.label;
+    row.innerHTML=`<div class="cmp-dot" style="background:${s.color}"></div><span class="cmp-name">${label}</span><span class="cmp-n" style="color:${s.color}">${n}</span>`;
+    el.appendChild(row);
+  });
+}
+
+// ─── Toggle single-mode spots/mask ───────────────────────────────────────────
+// (already defined above)
+
+// ─── Zoom & pan ───────────────────────────────────────────────────────────────
+function zoom(d){state.scale=Math.max(0.1,Math.min(10,state.scale+d));applyTransform();}
+function resetView(){fitToView();}
+document.getElementById('main-area').addEventListener('wheel',e=>{e.preventDefault();state.scale=Math.max(0.1,Math.min(10,state.scale+(e.deltaY<0?.1:-.1)));applyTransform();},{passive:false});
+// ── Cell hover tooltip ──────────────────────────────────────────────────────
+document.getElementById('main-area').addEventListener('mousemove', e => {
+  const tip = document.getElementById('cell-hover-tip');
+
+  // Only show when mask is visible and we have cell data
+  if (!state.showMask || !state.maskData || state.viewMode === 'compare') {
+    tip.style.display = 'none';
+    return;
+  }
+
+  // Convert mouse coords to image pixel coords
+  const rect  = wrap.getBoundingClientRect();
+  const imgX  = Math.floor((e.clientX - rect.left)  / state.scale);
+  const imgY  = Math.floor((e.clientY - rect.top)   / state.scale);
+
+  if (imgX < 0 || imgY < 0 || imgX >= state.maskW || imgY >= state.maskH) {
+    tip.style.display = 'none';
+    return;
+  }
+
+  // Alpha channel encodes cell_id (1–N); 0 = background
+  const pixIdx = (imgY * state.maskW + imgX) * 4;
+  const cellId = state.maskData[pixIdx + 3];   // raw alpha = cell_id from Python
+
+  if (cellId === 0) {
+    tip.style.display = 'none';
+    return;
+  }
+
+  // Look up spot counts from cells CSV
+  const fov   = state.fovs[state.currentPos];
+  const cells = fov?.cells || [];
+  const cell  = cells.find(c => c.cell_id === cellId || c.cell_id === String(cellId));
+
+  document.getElementById('tip-cell-label').textContent = `Cell ${cellId}`;
+  document.getElementById('tip-cy3').textContent = cell ? (cell.cy3_spots ?? '—') : '—';
+  document.getElementById('tip-cy5').textContent = cell ? (cell.cy5_spots ?? '—') : '—';
+
+  // Position tooltip near cursor, keep inside viewport
+  const main   = document.getElementById('main-area').getBoundingClientRect();
+  const tipW   = 140, tipH = 80;
+  let tx = e.clientX - main.left + 16;
+  let ty = e.clientY - main.top  + 16;
+  if (tx + tipW > main.width)  tx = e.clientX - main.left - tipW - 8;
+  if (ty + tipH > main.height) ty = e.clientY - main.top  - tipH - 8;
+  tip.style.left    = tx + 'px';
+  tip.style.top     = ty + 'px';
+  tip.style.display = 'block';
+});
+
+document.getElementById('main-area').addEventListener('mouseleave', () => {
+  document.getElementById('cell-hover-tip').style.display = 'none';
+});
+
+let dragging=false,dragStart={x:0,y:0},offsetStart={x:0,y:0};
+document.getElementById('main-area').addEventListener('mousedown',e=>{if(e.button!==0)return;dragging=true;dragStart={x:e.clientX,y:e.clientY};offsetStart={...state.offset};wrap.classList.add('grabbing');});
+window.addEventListener('mousemove',e=>{if(!dragging)return;state.offset.x=offsetStart.x+(e.clientX-dragStart.x);state.offset.y=offsetStart.y+(e.clientY-dragStart.y);applyTransform();});
+window.addEventListener('mouseup',()=>{dragging=false;wrap.classList.remove('grabbing');});
+
+// ─── Drop zones ───────────────────────────────────────────────────────────────
+function setupDrop(zoneId,inputId,handler){
+  const zone=document.getElementById(zoneId),input=document.getElementById(inputId);
+  zone.addEventListener('click',()=>input.click());input.addEventListener('change',e=>handler(Array.from(e.target.files)));
+  zone.addEventListener('dragover',e=>{e.preventDefault();zone.classList.add('drag-over');});zone.addEventListener('dragleave',()=>zone.classList.remove('drag-over'));
+  zone.addEventListener('drop',e=>{e.preventDefault();zone.classList.remove('drag-over');handler(Array.from(e.dataTransfer.files));});
+}
+// Folder drop
+const folderDrop=document.getElementById('folder-drop'),folderInput=document.getElementById('folder-input');
+folderDrop.addEventListener('click',()=>folderInput.click());folderInput.addEventListener('change',e=>loadFolder(e.target.files));
+folderDrop.addEventListener('dragover',e=>{e.preventDefault();folderDrop.classList.add('drag-over');});folderDrop.addEventListener('dragleave',()=>folderDrop.classList.remove('drag-over'));
+folderDrop.addEventListener('drop',e=>{e.preventDefault();folderDrop.classList.remove('drag-over');loadFolder(e.dataTransfer.files);});
+
+setupDrop('img-drop','img-input',files=>{files.forEach(f=>ingestFile(f));});
+setupDrop('csv-drop','csv-input',files=>{files.forEach(f=>ingestFile(f));});
+setupDrop('mask-drop','mask-input',files=>{files.forEach(f=>ingestFile(f));});
+
+// Compare CSV add
+const compareAdd=document.getElementById('compare-add-btn'),compareInput=document.getElementById('compare-csv-input');
+compareAdd.addEventListener('click',()=>compareInput.click());
+compareInput.addEventListener('change',e=>loadCompareCsvFiles(Array.from(e.target.files)));
+compareAdd.addEventListener('dragover',e=>{e.preventDefault();compareAdd.style.borderColor='var(--accent)';});
+compareAdd.addEventListener('dragleave',()=>compareAdd.style.borderColor='');
+compareAdd.addEventListener('drop',e=>{e.preventDefault();compareAdd.style.borderColor='';loadCompareCsvFiles(Array.from(e.dataTransfer.files));});
+
+// ─── Keyboard ─────────────────────────────────────────────────────────────────
+// ── Auto-load from ?out= URL parameter (set by GUI "Open Viewer" button) ──────
+// When served from Flask with ?out=/path/to/output, fetch the file list from
+// the server and ingest everything automatically.
+// ── Run selector state ───────────────────────────────────────────────────────
+let _serverRunSubfolders = [];   // [{name, path, mtime}] — populated if base dir passed
+let _serverBasePath = null;
+
+async function loadRunFromServer(runPath) {
+  const prog = document.getElementById('load-progress');
+  prog.classList.add('visible');
+  resetState();
+  try {
+    const res  = await fetch('/api/output_files?path=' + encodeURIComponent(runPath));
+    if (!res.ok) { prog.textContent = 'Could not load: ' + runPath; return; }
+    const data = await res.json();
+
+    const files = data.files || data;   // handle both old flat array and new {files:[]} format
+    const relevant = files.filter(f =>
+      /\.(tif|tiff|png|jpg|jpeg|csv)$/i.test(f.name) &&
+      !f.name.startsWith('.') && !f.name.startsWith('~$')
+    );
+
+    prog.textContent = `Loading 0 / ${relevant.length} files…`;
+    let done = 0;
+    for (const f of relevant) {
+      try {
+        const blob = await fetch(f.url).then(r => r.blob());
+        await ingestFile(new File([blob], f.name, { type: blob.type }), false);
+      } catch(e) {}
+      done++;
+      prog.textContent = `Loading ${done} / ${relevant.length} files…`;
+      if (done % 5 === 0) refreshFOVList();
+    }
+  } catch(e) {
+    prog.textContent = 'Load failed: ' + e.message;
+  }
+  prog.classList.remove('visible');
+  refreshFOVList();
+}
+
+function renderRunPicker(subfolders, selectedPath) {
+  // Show a small run-selector bar above the FOV list
+  let bar = document.getElementById('run-picker-bar');
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = 'run-picker-bar';
+    bar.style.cssText = [
+      'flex-shrink:0', 'border-bottom:1px solid var(--border)',
+      'padding:7px 12px', 'background:var(--panel)',
+      'display:flex', 'align-items:center', 'gap:6px',
+    ].join(';');
+    // Insert above fov-list
+    const fovList = document.getElementById('fov-list');
+    fovList.parentNode.insertBefore(bar, fovList);
+  }
+  bar.innerHTML = '';
+
+  const label = document.createElement('span');
+  label.style.cssText = 'font-size:9px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;white-space:nowrap';
+  label.textContent = 'Run';
+  bar.appendChild(label);
+
+  const sel = document.createElement('select');
+  sel.style.cssText = [
+    'flex:1', 'background:var(--panel)', 'border:1px solid var(--border2)',
+    'color:var(--text)', 'font-family:inherit', 'font-size:11px',
+    'padding:4px 7px', 'border-radius:4px', 'outline:none',
+  ].join(';');
+
+  subfolders.forEach(r => {
+    const opt = new Option(r.name, r.path);
+    if (r.path === selectedPath) opt.selected = true;
+    sel.appendChild(opt);
+  });
+
+  sel.onchange = () => loadRunFromServer(sel.value);
+  bar.appendChild(sel);
+}
+
+(async function autoLoadFromUrl() {
+  const params  = new URLSearchParams(window.location.search);
+  const outPath = params.get('out');
+  if (!outPath) return;
+
+  const prog = document.getElementById('load-progress');
+  prog.textContent = 'Scanning output folder…';
+  prog.classList.add('visible');
+
+  try {
+    resetState();
+    const res  = await fetch('/api/output_files?path=' + encodeURIComponent(outPath));
+    if (!res.ok) { prog.textContent = 'Could not load: ' + outPath; return; }
+    const data = await res.json();
+
+    // New format: {files, run_subfolders, selected_run}
+    // Old flat format: [{name, url}]  — keep backward compat
+    const subfolders = data.run_subfolders || [];
+    const files      = data.files || (Array.isArray(data) ? data : []);
+    const selected   = data.selected_run || outPath;
+
+    _serverRunSubfolders = subfolders;
+    _serverBasePath      = outPath;
+
+    // Show run picker if multiple runs detected
+    if (subfolders.length > 1) {
+      renderRunPicker(subfolders, selected);
+    } else if (subfolders.length === 1) {
+      // Only one run — show picker anyway so user knows which run is loaded
+      renderRunPicker(subfolders, selected);
+    }
+
+    // Load files from selected (most recent) run
+    const relevant = files.filter(f =>
+      /\.(tif|tiff|png|jpg|jpeg|csv)$/i.test(f.name) &&
+      !f.name.startsWith('.') && !f.name.startsWith('~$')
+    );
+
+    prog.textContent = `Loading 0 / ${relevant.length} files from run: ${selected.split('/').pop()}…`;
+    let done = 0;
+    for (const f of relevant) {
+      try {
+        const blob = await fetch(f.url).then(r => r.blob());
+        await ingestFile(new File([blob], f.name, { type: blob.type }), false);
+      } catch(e) {}
+      done++;
+      prog.textContent = `Loading ${done} / ${relevant.length} files…`;
+      if (done % 5 === 0) refreshFOVList();
+    }
+  } catch(e) {
+    prog.textContent = 'Auto-load failed: ' + e.message;
+  }
+  prog.classList.remove('visible');
+  refreshFOVList();
+})();
+
+window.addEventListener('keydown',e=>{
+  if(state.currentPos&&state.currentCh)saveSliders();
+  const idx=state.posKeys.indexOf(state.currentPos);
+  if(e.key==='ArrowDown'||e.key==='j'){if(idx<state.posKeys.length-1)selectFOV(state.posKeys[idx+1]);}
+  else if(e.key==='ArrowUp'||e.key==='k'){if(idx>0)selectFOV(state.posKeys[idx-1]);}
+  else if(e.key==='ArrowRight'||e.key==='l'){const av=CHANNELS.filter(c=>{const f=state.fovs[state.currentPos];return f?.channels[c]||f?.spots[c];});const ci=av.indexOf(state.currentCh);if(ci<av.length-1)switchChannel(av[ci+1]);}
+  else if(e.key==='ArrowLeft'||e.key==='h'){const av=CHANNELS.filter(c=>{const f=state.fovs[state.currentPos];return f?.channels[c]||f?.spots[c];});const ci=av.indexOf(state.currentCh);if(ci>0)switchChannel(av[ci-1]);}
+  else if(e.key==='s')toggleSpots();
+  else if(e.key==='m')toggleMask();
+  else if(e.key==='r')resetView();
+  else if(e.key==='+'||e.key==='=')zoom(0.25);
+  else if(e.key==='-')zoom(-0.25);
+});
+</script>
+
+<script>
+(function(){
+  const saved = localStorage.getItem('fsc-theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
+  document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('theme-toggle');
+    if (btn) btn.textContent = saved === 'dark' ? '☀' : '☾';
+  });
+})();
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('fsc-theme', next);
+  const btn = document.getElementById('theme-toggle');
+  if (btn) btn.textContent = next === 'dark' ? '☀' : '☾';
+}
+</script>
+</body>
+</html>
