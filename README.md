@@ -2,7 +2,7 @@
 
 > End-to-end smFISH spot detection, cell segmentation, and interactive visualization.
 
-📖 **Full documentation:** Download and open [`docs.html`](Faryabi_Spot_v3/docs.html) in your browser for the complete reference — installation, all flags, tuning guide, API, FAQ, and more.
+📖 **Full documentation:** [tubcraft.github.io/Faryabi_Spotcaller](https://tubcraft.github.io/Faryabi_Spotcaller/) — installation, all flags, tuning guide, API, FAQ, and more.
 
 A complete pipeline for **single-molecule fluorescence in-situ hybridisation (smFISH)** data analysis. It combines two spot detectors, Cellpose cell segmentation, an interactive browser-based viewer, and a Flask web GUI — processing raw TIF stacks through to per-cell spot counts.
 
